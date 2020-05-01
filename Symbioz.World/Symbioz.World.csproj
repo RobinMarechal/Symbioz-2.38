@@ -119,6 +119,9 @@
         <Compile Include="Handlers\RolePlay\Chat\ChatHandler.cs" />
         <Compile Include="Handlers\RolePlay\Chat\ChatChannelAttribute.cs" />
         <Compile Include="Handlers\RolePlay\Chat\ChatChannels.cs" />
+        <Compile Include="Handlers\RolePlay\Commands\Brokers\Fights\DropsCmdBroker.cs" />
+        <Compile Include="Handlers\RolePlay\Commands\Brokers\Interactives\MineCmdBroker.cs" />
+        <Compile Include="Handlers\RolePlay\Commands\Brokers\Interactives\NpcCmdBroker.cs" />
         <Compile Include="Handlers\RolePlay\Commands\ChatCommand.cs" />
         <Compile Include="Handlers\RolePlay\Commands\Command.cs" />
         <Compile Include="Handlers\RolePlay\Commands\CommandsHandler.cs" />
@@ -127,8 +130,11 @@
         <Compile Include="Handlers\RolePlay\Commands\Brokers\Interactives\Navigation\EntriesCmdBroker.cs" />
         <Compile Include="Handlers\RolePlay\Commands\Brokers\Interactives\Navigation\ExitsCmdBroker.cs" />
         <Compile Include="Handlers\RolePlay\Commands\Brokers\Interactives\Navigation\LinksCmdBroker.cs" />
+        <Compile Include="Handlers\RolePlay\Commands\Utils\ReplyUtils.cs" />
         <Compile Include="Handlers\RolePlay\Commands\Utils\InteractiveElementsUtils.cs" />
         <Compile Include="Handlers\RolePlay\Commands\Utils\LinkItem.cs" />
+        <Compile Include="Handlers\RolePlay\Commands\Utils\Mines\Mine.cs" />
+        <Compile Include="Handlers\RolePlay\Commands\Utils\Mines\MineMap.cs" />
         <Compile Include="Handlers\RolePlay\Commands\Utils\NewElementData.cs" />
         <Compile Include="Handlers\RolePlay\Exchanges\ExchangesHandler.cs" />
         <Compile Include="Handlers\RolePlay\Guilds\GuildsHandler.cs" />
@@ -146,6 +152,7 @@
         <Compile Include="Handlers\RolePlay\Social\SocialHandler.cs" />
         <Compile Include="Handlers\SelfMadeHandler.cs" />
         <Compile Include="Handlers\Transition\TransitionHandler.cs" />
+        <Compile Include="Helpers\Extensions.cs" />
         <Compile Include="Models\DelayedAction.cs" />
         <Compile Include="Models\Dialogs\BookDialog.cs" />
         <Compile Include="Models\Dialogs\Dialog.cs" />
@@ -199,6 +206,8 @@
         <Compile Include="Models\Exchanges\AbstractCraftExchange.cs" />
         <Compile Include="Models\Exchanges\BuyExchange.cs" />
         <Compile Include="Models\Exchanges\CraftExchange.cs" />
+        <Compile Include="Models\Exchanges\AbstractTradeExchange.cs" />
+        <Compile Include="Models\Exchanges\ItemStack.cs" />
         <Compile Include="Models\Exchanges\SmithMagicExchange.cs" />
         <Compile Include="Models\Exchanges\SellExchange.cs" />
         <Compile Include="Models\Fights\Damages\Damage.cs" />
@@ -579,6 +588,7 @@
         <Compile Include="Records\DungeonRecord.cs" />
         <Compile Include="Records\Guilds\GuildRecord.cs" />
         <Compile Include="Records\Idols\IdolRecord.cs" />
+        <Compile Include="Records\Interactives\Interactives.cs" />
         <Compile Include="Records\Items\BankItemRecord.cs" />
         <Compile Include="Records\Breeds\BreedRecord.cs" />
         <Compile Include="Providers\Network\TransitionServerManager.cs" />
@@ -674,7 +684,6 @@
         <None Include="packages.config" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Handlers\RolePlay\Commands\Brokers" />
         <Folder Include="Models\Idols\" />
     </ItemGroup>
     <ItemGroup>

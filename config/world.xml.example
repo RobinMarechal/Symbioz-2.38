@@ -13,12 +13,13 @@
     <StartMapId>154010883</StartMapId>
     <StartCellId>383</StartCellId>
     <StartKamas>0</StartKamas>
-    <KamasRate>100</KamasRate>
-    <XpRate>100</XpRate>
-    <JobXpRate>100</JobXpRate>
-    <DropsRate>100</DropsRate>
-    <CraftRate>100</CraftRate>
+    <KamasRate>4</KamasRate>
+    <XpRate>2</XpRate>
+    <JobXpRate>2</JobXpRate>
+    <DropsRate>8</DropsRate>
+    <CraftRate>2</CraftRate>
     <StartLevel>1</StartLevel>
+    <HealthRegenPerSecond>1</HealthRegenPerSecond>
     <PlayDefaultCinematic>True</PlayDefaultCinematic>
     <WelcomeMessage>Bienvenu sur Axiom! nous sommes content de vous revoir</WelcomeMessage>
     <MapKey>649ae451ca33ec53bbcbcc33becf15f4</MapKey>
