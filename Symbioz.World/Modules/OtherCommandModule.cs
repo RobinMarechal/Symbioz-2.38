@@ -250,28 +250,29 @@ namespace Symbioz.World.Modules {
 
         [ChatCommand("donjon", ServerRoleEnum.Player)]
         public static void DungeonCommand(string value, WorldClient client) {
-            if (client.Character.Level < 15) {
-                client.Character.Reply("Votre niveau est trop faible pour utiliser cette commande...");
-
-                return;
-            }
-
-            if (value == null || !Destinations.ContainsKey(value)) {
-                client.Character.Reply("Le donjon n'existe pas, liste des donjons disponibles:", Color.Blue);
-                client.Character.Reply(Destinations.ToList().ConvertAll<string>(x => x.Key).ToCSV(), Color.Blue);
-            }
-            else {
-                if (client.Character.Inventory.Exist(TokenId, DungeonTokenQuantity)) {
-                    int mapId = Destinations[value];
-                    client.Character.Teleport(mapId);
-                    CharacterItemRecord item = client.Character.Inventory.GetFirstItem(TokenId, DungeonTokenQuantity);
-                    client.Character.Inventory.RemoveItem(item, DungeonTokenQuantity);
-                    client.Character.OnItemLost(TokenId, DungeonTokenQuantity);
-                }
-                else {
-                    client.Character.Reply("Vous devez posséder " + DungeonTokenQuantity + "x <b>[Ticket Doré]</b>");
-                }
-            }
+            client.Character.ReplyError("Disabled command.");
+            // if (client.Character.Level < 15) {
+            //     client.Character.Reply("Votre niveau est trop faible pour utiliser cette commande...");
+            //
+            //     return;
+            // }
+            //
+            // if (value == null || !Destinations.ContainsKey(value)) {
+            //     client.Character.Reply("Le donjon n'existe pas, liste des donjons disponibles:", Color.Blue);
+            //     client.Character.Reply(Destinations.ToList().ConvertAll<string>(x => x.Key).ToCSV(), Color.Blue);
+            // }
+            // else {
+            //     if (client.Character.Inventory.Exist(TokenId, DungeonTokenQuantity)) {
+            //         int mapId = Destinations[value];
+            //         client.Character.Teleport(mapId);
+            //         CharacterItemRecord item = client.Character.Inventory.GetFirstItem(TokenId, DungeonTokenQuantity);
+            //         client.Character.Inventory.RemoveItem(item, DungeonTokenQuantity);
+            //         client.Character.OnItemLost(TokenId, DungeonTokenQuantity);
+            //     }
+            //     else {
+            //         client.Character.Reply("Vous devez posséder " + DungeonTokenQuantity + "x <b>[Ticket Doré]</b>");
+            //     }
+            // }
         }
     }
 }

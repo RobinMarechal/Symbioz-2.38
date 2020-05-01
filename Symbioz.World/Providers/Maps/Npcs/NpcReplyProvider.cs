@@ -23,7 +23,7 @@ namespace Symbioz.World.Providers.Maps.Npcs {
             var handler = Handlers.FirstOrDefault(x => x.Key.Identifier.ToLower() == reply.ActionType.ToLower());
 
             if (handler.Value != null) {
-                handler.Value.Invoke(null, new object[] {character, reply});
+                handler.Value.Invoke(null, new object[] { character, reply });
             }
             else {
                 character.ReplyError("No ReplyHandler linked to this actionType. (" + reply.ActionType + ")");
@@ -138,6 +138,26 @@ namespace Symbioz.World.Providers.Maps.Npcs {
             // foreach (var groupMember in groupMembers) {
             //     groupMember.Teleport(character.Map.Id, character.CellId);
             // }
+        }
+
+        // Change mine after talking to Feldz Paff
+        [NpcReply("TeleportRandomMine")]
+        public static void TeleportToRandomMine(Character character, NpcReplyRecord reply) {
+            var mapPool = new[] {
+                new[] { 97256975, 302 },
+                new[] { 29885961, 345 },
+                new[] { 102238721, 156 },
+                new[] { 97259013, 464 },
+                new[] { 30410240, 171 },
+                new[] { 29622275, 276 }
+            };
+
+            var random = mapPool.Random();
+
+            int mapId = random[0];
+            ushort cellId = (ushort) random[1];
+
+            character.Teleport(mapId, cellId);
         }
     }
 }

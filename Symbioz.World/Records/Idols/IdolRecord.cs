@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Symbioz.World.Records.Idols {
-    [Table("Idols", true, 6)]
+    [Table("Idols", true, 12)]
     public class IdolRecord : ITable {
         public static List<IdolRecord> Idols = new List<IdolRecord>();
 

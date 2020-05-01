@@ -1,28 +1,22 @@
-﻿using Symbioz.Protocol.Enums;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Symbioz.Protocol.Enums;
 using Symbioz.Protocol.Messages;
 using Symbioz.World.Models.Entities;
 using Symbioz.World.Models.Items;
-using Symbioz.World.Records;
 using Symbioz.World.Records.Characters;
 using Symbioz.World.Records.Items;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Symbioz.World.Models.Exchanges {
-    public class BankExchange : Exchange {
-        public override ExchangeTypeEnum ExchangeType {
-            get { return ExchangeTypeEnum.BANK; }
-        }
+    public class BankExchange : AbstractTradeExchange {
+        public override ExchangeTypeEnum ExchangeType => ExchangeTypeEnum.BANK;
 
         public const uint StorageMaxSlot = 300;
 
         private ItemCollection<BankItemRecord> m_items;
 
-        public BankExchange(Character character, List<BankItemRecord> bankItems)
-            : base(character) {
+        public BankExchange(Character character, List<BankItemRecord> bankItems) : base(character) {
             this.m_items = new ItemCollection<BankItemRecord>(bankItems);
             this.m_items.OnItemAdded += this.m_items_OnItemAdded;
             this.m_items.OnItemRemoved += this.m_items_OnItemRemoved;
@@ -55,12 +49,17 @@ namespace Symbioz.World.Models.Exchanges {
             this.Character.Client.Send(new StorageInventoryContentMessage(this.m_items.GetObjectsItems(), this.Character.Client.AccountInformations.BankKamas));
         }
 
+        
+        public override IEnumerable<ItemStack> GetAllPresentItems() {
+            return this.m_items.GetItems().ToList().ConvertAll(x => new ItemStack(x.UId, x.Quantity));
+        }
+
         public override void MoveItem(uint uid, int quantity) {
             if (quantity > 0) {
                 CharacterItemRecord item = this.Character.Inventory.GetItem(uid);
 
                 if (item != null && item.Quantity >= quantity && item.CanBeExchanged()) {
-                    var bankItem = item.ToBankItemRecord(this.Character.Client.Account.Id);
+                    BankItemRecord bankItem = item.ToBankItemRecord(this.Character.Client.Account.Id);
                     bankItem.Quantity = (uint) quantity;
                     this.Character.Inventory.RemoveItem(item.UId, (uint) quantity);
                     this.m_items.AddItem(bankItem);
@@ -71,7 +70,7 @@ namespace Symbioz.World.Models.Exchanges {
                 uint removedQuantity = (uint) Math.Abs(quantity);
 
                 if (item != null && item.Quantity >= removedQuantity) {
-                    var characterItemRecord = item.ToCharacterItemRecord(this.Character.Id);
+                    CharacterItemRecord characterItemRecord = item.ToCharacterItemRecord(this.Character.Id);
                     characterItemRecord.Quantity = removedQuantity;
                     this.m_items.RemoveItem(uid, removedQuantity);
                     this.Character.Inventory.AddItem(characterItemRecord);

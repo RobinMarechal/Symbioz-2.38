@@ -11,12 +11,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace Symbioz.World.Models.Exchanges {
-    public class PlayerTradeExchange : Exchange {
-        public override ExchangeTypeEnum ExchangeType {
-            get { return ExchangeTypeEnum.PLAYER_TRADE; }
-        }
+    public class PlayerTradeExchange : AbstractTradeExchange {
+        public override ExchangeTypeEnum ExchangeType => ExchangeTypeEnum.PLAYER_TRADE;
 
         private ItemCollection<CharacterItemRecord> ExchangedItems = new ItemCollection<CharacterItemRecord>();
 
@@ -26,8 +25,7 @@ namespace Symbioz.World.Models.Exchanges {
 
         public Character SecondTrader { get; set; }
 
-        public PlayerTradeExchange(Character character, Character secondCharacter)
-            : base(character) {
+        public PlayerTradeExchange(Character character, Character secondCharacter) : base(character) {
             this.SecondTrader = secondCharacter;
 
             this.ExchangedItems.OnItemAdded += this.ExchangedItems_OnItemAdded;
@@ -108,6 +106,10 @@ namespace Symbioz.World.Models.Exchanges {
                 return false;
             else
                 return true;
+        }
+
+        public override IEnumerable<ItemStack> GetAllPresentItems() {
+            return this.ExchangedItems.GetItems().ToList().ConvertAll(x => new ItemStack(x.UId, x.Quantity));
         }
 
         public override void MoveItem(uint uid, int quantity) {

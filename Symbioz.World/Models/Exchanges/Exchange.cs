@@ -2,29 +2,16 @@
 using Symbioz.Protocol.Messages;
 using Symbioz.World.Models.Dialogs;
 using Symbioz.World.Models.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Symbioz.World.Models.Exchanges
-{
-    public abstract class Exchange : Dialog
-    {
-        public override DialogTypeEnum DialogType
-        {
-            get { return DialogTypeEnum.DIALOG_EXCHANGE; }
-        }
+namespace Symbioz.World.Models.Exchanges {
+    public abstract class Exchange : Dialog {
+        public override DialogTypeEnum DialogType => DialogTypeEnum.DIALOG_EXCHANGE;
+
         public abstract ExchangeTypeEnum ExchangeType { get; }
 
         protected bool Succes = false;
 
-        public Exchange(Character character)
-            : base(character)
-        {
-
-        }
+        public Exchange(Character character) : base(character) { }
 
         public abstract void MoveItem(uint uid, int quantity);
 
@@ -32,11 +19,9 @@ namespace Symbioz.World.Models.Exchanges
 
         public abstract void MoveKamas(int quantity);
 
-        public override void Close()
-        {
-            Character.Client.Send(new ExchangeLeaveMessage((sbyte)this.DialogType, this.Succes));
+        public override void Close() {
+            this.Character.Client.Send(new ExchangeLeaveMessage((sbyte) this.DialogType, this.Succes));
             base.Close();
-
         }
     }
 }

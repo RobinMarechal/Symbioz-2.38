@@ -55,6 +55,9 @@ namespace Symbioz.World {
         public int JobXpRate { get; set; }
 
         public ushort StartLevel { get; set; }
+        
+        // [0, 10]
+        public byte HealthRegenPerSecond { get; set; }
 
         public bool PlayDefaultCinematic { get; set; }
 
@@ -92,7 +95,10 @@ namespace Symbioz.World {
             this.StartKamas = 0;
             this.KamasRate = 1;
             this.DropsRate = 1;
-            this.CraftRate = 20;
+            this.CraftRate = 1;
+            this.XpRate = 1;
+            this.JobXpRate = 1;
+            this.HealthRegenPerSecond = 1;
             this.WelcomeMessage = "Welcome on server";
             this.ApLimit = 12;
             this.MpLimit = 6;

@@ -58,69 +58,70 @@ namespace Symbioz.World.Models.Exchanges
 
         public override void Open()
         {
-            ObjectItemToSellInNpcShop[] items = Array.ConvertAll<ItemRecord, ObjectItemToSellInNpcShop>(ItemToSell, x => x.GetObjectItemToSellInNpcShop(LevelPrice));
-            Character.Client.Send(new ExchangeStartOkNpcShopMessage(Npc.Id, TokenId, items));
+            ObjectItemToSellInNpcShop[] items = Array.ConvertAll<ItemRecord, ObjectItemToSellInNpcShop>(this.ItemToSell, x => x.GetObjectItemToSellInNpcShop(this.LevelPrice));
+            this.Character.Client.Send(new ExchangeStartOkNpcShopMessage(this.Npc.Id, this.TokenId, items));
         }
 
         public void Buy(ushort gid, uint quantity)
         {
-            ItemRecord template = ItemToSell.FirstOrDefault(x => x.Id == gid);
+            ItemRecord template = this.ItemToSell.FirstOrDefault(x => x.Id == gid);
 
             if (template != null)
             {
                 if (this.TokenId == 0)
                 {
-                    int cost = (int)(template.GetPrice(LevelPrice) * quantity);
+                    int cost = (int)(template.GetPrice(this.LevelPrice) * quantity);
 
-                    if (!Character.RemoveKamas(cost))
+                    if (!this.Character.RemoveKamas(cost))
                         return;
                 }
                 else
                 {
-                    CharacterItemRecord tokenItem = Character.Client.Character.Inventory.GetFirstItem(TokenId, (uint)(template.GetPrice(LevelPrice) * quantity));
+                    CharacterItemRecord tokenItem = this.Character.Client.Character.Inventory.GetFirstItem(this.TokenId, (uint)(template.GetPrice(this.LevelPrice) * quantity));
 
                     if (tokenItem == null)
                     {
-                        Character.Client.Character.ReplyError("Vous ne possedez pas asser de token.");
+                        this.Character.Client.Character.ReplyError("Vous ne possedez pas asser de token.");
                         return;
                     }
                     else
                     {
-                        Character.Inventory.RemoveItem(tokenItem.UId, (uint)(quantity * template.GetPrice(LevelPrice)));
+                        this.Character.Inventory.RemoveItem(tokenItem.UId, (uint)(quantity * template.GetPrice(this.LevelPrice)));
                     }
                 }
 
-                Character.Inventory.AddItem(gid, quantity,TokenId != 0);
-                Character.Client.Send(new ExchangeBuyOkMessage());
+                this.Character.Inventory.AddItem(gid, quantity, this.TokenId != 0);
+                this.Character.Client.Send(new ExchangeBuyOkMessage());
             }
 
         }
         public void Sell(uint uid, uint quantity)
         {
-            CharacterItemRecord item = Character.Inventory.GetItem(uid);
+            CharacterItemRecord item = this.Character.Inventory.GetItem(uid);
 
             if (item != null && item.CanBeExchanged() && item.Quantity >= quantity)
             {
-                int gained = (int)(((double)item.Template.GetPrice(LevelPrice) / (double)10) * quantity);
+                int gained = (int)(((double)item.Template.GetPrice(this.LevelPrice) / (double)10) * quantity);
 
-                if (gained >= item.Template.GetPrice(LevelPrice))
+                if (gained >= item.Template.GetPrice(this.LevelPrice))
                 {
                     return;
                 }
 
                 gained = gained == 0 ? 1 : gained;
 
-                Character.Inventory.RemoveItem(uid, quantity);
+                this.Character.Inventory.RemoveItem(uid, quantity);
 
-                if (TokenId == 0)
+                if (this.TokenId == 0)
                 {
-                    Character.AddKamas(gained);
+                    this.Character.AddKamas(gained);
                 }
                 else
                 {
-                    Character.Inventory.AddItem(TokenId, (uint)gained);
+                    this.Character.Inventory.AddItem(this.TokenId, (uint)gained);
                 }
-                Character.Client.Send(new ExchangeSellOkMessage());
+
+                this.Character.Client.Send(new ExchangeSellOkMessage());
             }
         }
         public override void MoveItem(uint uid, int quantity)

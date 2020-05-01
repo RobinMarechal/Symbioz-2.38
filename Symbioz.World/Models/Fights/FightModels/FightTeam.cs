@@ -272,7 +272,7 @@ namespace Symbioz.World.Models.Fights.FightModels
         public FightTeamInformations GetFightTeamInformations()
         {
             List<FightTeamMemberInformations> members = new List<FightTeamMemberInformations>();
-            Fighters.ForEach(x => members.Add(x.GetFightTeamMemberInformations()));
+            Fighters.ForEach(x => members.Add(x.GetFightTeamMemberInformation()));
             var team = new FightTeamInformations(Id, Leader != null ? Leader.Id : 0, (sbyte)Side, (sbyte)Type, 0, members.ToArray());
             return team;
         }

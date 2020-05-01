@@ -53,27 +53,27 @@ namespace Symbioz.World.Models.Exchanges
         {
             this.SkillId = skillId;
             this.JobType = jobType;
-            this.CharacterJob = Character.GetJob(JobType);
+            this.CharacterJob = this.Character.GetJob(this.JobType);
             this.Count = 1;
 
-            this.CraftedItems.OnItemAdded += CraftedItems_OnItemAdded;
-            this.CraftedItems.OnItemRemoved += CraftedItems_OnItemRemoved;
+            this.CraftedItems.OnItemAdded += this.CraftedItems_OnItemAdded;
+            this.CraftedItems.OnItemRemoved += this.CraftedItems_OnItemRemoved;
 
-            this.CraftedItems.OnItemQuantityChanged += CraftedItems_OnItemQuantityChanged;
+            this.CraftedItems.OnItemQuantityChanged += this.CraftedItems_OnItemQuantityChanged;
 
         }
         void CraftedItems_OnItemQuantityChanged(CharacterItemRecord arg1, uint arg2)
         {
-            Character.Client.Send(new ExchangeObjectModifiedMessage(false, arg1.GetObjectItem()));
+            this.Character.Client.Send(new ExchangeObjectModifiedMessage(false, arg1.GetObjectItem()));
         }
         void CraftedItems_OnItemRemoved(CharacterItemRecord obj)
         {
-            Character.Client.Send(new ExchangeObjectRemovedMessage(false, obj.UId));
+            this.Character.Client.Send(new ExchangeObjectRemovedMessage(false, obj.UId));
         }
 
         void CraftedItems_OnItemAdded(CharacterItemRecord obj)
         {
-            Character.Client.Send(new ExchangeObjectAddedMessage(false, obj.GetObjectItem()));
+            this.Character.Client.Send(new ExchangeObjectAddedMessage(false, obj.GetObjectItem()));
         }
         private bool CanAddItem(CharacterItemRecord item, int quantity)
         {
@@ -82,12 +82,12 @@ namespace Symbioz.World.Models.Exchanges
 
             CharacterItemRecord exchanged = null;
 
-            exchanged = CraftedItems.GetItem(item.GId, item.Effects);
+            exchanged = this.CraftedItems.GetItem(item.GId, item.Effects);
 
             if (exchanged != null && exchanged.UId != item.UId)
                 return false;
 
-            exchanged = CraftedItems.GetItem(item.UId);
+            exchanged = this.CraftedItems.GetItem(item.UId);
 
             if (exchanged == null)
             {
@@ -101,11 +101,11 @@ namespace Symbioz.World.Models.Exchanges
         }
         public override void MoveItem(uint uid, int quantity)
         {
-            CharacterItemRecord item = Character.Inventory.GetItem(uid);
+            CharacterItemRecord item = this.Character.Inventory.GetItem(uid);
 
             if (item != null)
             {
-                if (quantity > 0 && CanAddItem(item, quantity))
+                if (quantity > 0 && this.CanAddItem(item, quantity))
                 {
 
                     this.CraftedItems.AddItem(item, (uint)quantity);
@@ -124,7 +124,7 @@ namespace Symbioz.World.Models.Exchanges
 
         public override void Open()
         {
-            Character.Client.Send(new ExchangeStartOkCraftWithInformationMessage(SkillId));
+            this.Character.Client.Send(new ExchangeStartOkCraftWithInformationMessage(this.SkillId));
         }
     }
 }

@@ -85,7 +85,7 @@ namespace Symbioz.World.Models.Fights.Fighters
                Team.Id, 0, Alive, Stats.GetFightMinimalStats(), new ushort[0], Template.Id, GradeId);
         }
 
-        public override FightTeamMemberInformations GetFightTeamMemberInformations()
+        public override FightTeamMemberInformations GetFightTeamMemberInformation()
         {
             throw new NotImplementedException();
         }

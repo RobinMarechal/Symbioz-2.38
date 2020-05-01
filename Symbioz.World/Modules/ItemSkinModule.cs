@@ -91,7 +91,7 @@ namespace Symbioz.World.Modules {
                 if (record != null && record.AppearanceId != item.Skin && item.Skin != 0) {
                     if (record.Weapon) {
                         var weaponRecord = WeaponRecord.GetWeapon((ushort) item.Id);
-                        weaponRecord.AppearanceId = (ushort) item.Skin;
+                        weaponRecord.Template.AppearanceId = (ushort) item.Skin;
                         weaponRecord.UpdateInstantElement();
                     }
                     else {

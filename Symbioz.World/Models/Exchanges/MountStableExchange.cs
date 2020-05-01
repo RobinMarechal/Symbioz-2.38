@@ -11,70 +11,58 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Symbioz.World.Models.Exchanges
-{
-    public class MountStableExchange : Exchange
-    {
-        public override ExchangeTypeEnum ExchangeType
-        {
-            get
-            {
-                return ExchangeTypeEnum.MOUNT_STABLE;
-            }
+namespace Symbioz.World.Models.Exchanges {
+    public class MountStableExchange : Exchange {
+        public override ExchangeTypeEnum ExchangeType {
+            get { return ExchangeTypeEnum.MOUNT_STABLE; }
         }
 
         public MountStableExchange(Character character)
-            : base(character)
-        {
+            : base(character) { }
 
+        public override void Open() {
+            this.Character.Client.Send(new PaddockPropertiesMessage(new PaddockInformations(10, 10)));
+            this.Character.Client.Send(new ExchangeStartOkMountMessage(new MountClientData[0], new MountClientData[0]));
         }
-        public override void Open()
-        {
-            Character.Client.Send(new PaddockPropertiesMessage(new PaddockInformations(10, 10)));
-            Character.Client.Send(new ExchangeStartOkMountMessage(new MountClientData[0], new MountClientData[0]));
-        }
-        public void HandleMountStable(sbyte actionType, uint[] ridesId)
-        {
+
+        public void HandleMountStable(sbyte actionType, uint[] ridesId) {
             if (actionType == 15) // Equiper la monture
             {
-                if (Character.Inventory.HasMountEquiped)
-                {
-                    UnequipMount(Character.Inventory.Mount.UId);
+                if (this.Character.Inventory.HasMountEquiped) {
+                    this.UnequipMount(this.Character.Inventory.Mount.UId);
                 }
 
-                EquipMount(ridesId[0]);
+                this.EquipMount(ridesId[0]);
             }
+
             if (actionType == 13) // Obtenir un certificat de la monture
             {
-                UnequipMount(ridesId[0]);
+                this.UnequipMount(ridesId[0]);
             }
+        }
 
+        private void EquipMount(uint itemUId) {
+            CharacterItemRecord item = this.Character.Inventory.GetItem(itemUId);
+            CharacterMountRecord mount = this.Character.Inventory.GetMount(item);
+            this.Character.Inventory.SetMount(mount, item);
         }
-        private void EquipMount(uint itemUId)
-        {
-            CharacterItemRecord item = Character.Inventory.GetItem(itemUId);
-            CharacterMountRecord mount = Character.Inventory.GetMount(item);
-            Character.Inventory.SetMount(mount, item);
+
+        private void UnequipMount(long mountUId) {
+            CharacterMountRecord mount = this.Character.Inventory.GetMount(mountUId);
+            CharacterItemRecord item = mount.CreateCertificate(this.Character);
+            this.Character.Inventory.AddItem(item);
+            this.Character.Inventory.UnsetMount();
         }
-        private void UnequipMount(long mountUId)
-        {
-            CharacterMountRecord mount = Character.Inventory.GetMount(mountUId);
-            CharacterItemRecord item = mount.CreateCertificate(Character);
-            Character.Inventory.AddItem(item);
-            Character.Inventory.UnsetMount();
-        }
-        public override void MoveItem(uint uid, int quantity)
-        {
+
+        public override void MoveItem(uint uid, int quantity) {
             throw new NotImplementedException();
         }
 
-        public override void Ready(bool ready, ushort step)
-        {
+        public override void Ready(bool ready, ushort step) {
             throw new NotImplementedException();
         }
 
-        public override void MoveKamas(int quantity)
-        {
+        public override void MoveKamas(int quantity) {
             throw new NotImplementedException();
         }
     }

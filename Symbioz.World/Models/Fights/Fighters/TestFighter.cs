@@ -64,7 +64,7 @@ namespace Symbioz.World.Models.Fights.Fighters {
                                                     this.GradeId);
         }
 
-        public override FightTeamMemberInformations GetFightTeamMemberInformations() {
+        public override FightTeamMemberInformations GetFightTeamMemberInformation() {
             throw new NotImplementedException();
         }
     }

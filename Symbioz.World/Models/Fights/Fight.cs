@@ -24,10 +24,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Symbioz.World.Models.Fights
-{
-    public abstract class Fight
-    {
+namespace Symbioz.World.Models.Fights {
+    public abstract class Fight {
         Logger logger = new Logger();
 
         /// <summary>
@@ -35,107 +33,38 @@ namespace Symbioz.World.Models.Fights
         /// </summary>
         public const uint TurnTime = 30;
 
-        public abstract FightTypeEnum FightType
-        {
-            get;
+        public abstract FightTypeEnum FightType { get; }
+
+        public abstract bool SpawnJoin { get; }
+
+        public abstract bool PvP { get; }
+
+        public abstract bool ShowBlades { get; }
+
+        public int Id { get; set; }
+
+        public MapRecord Map { get; set; }
+
+        public short CellId { get; set; }
+
+        public FightTeam BlueTeam { get; set; }
+
+        public FightTeam RedTeam { get; set; }
+        public FightTeam Winners { get; set; }
+        public FightTeam Losers { get; set; }
+        public DateTime CreationTime { get; private set; }
+        public DateTime StartTime { get; private set; }
+        protected ActionTimer m_placementTimer { get; set; }
+        protected ActionTimer m_turnTimer { get; set; }
+        public TimeLine TimeLine { get; private set; }
+
+        public Fighter FighterPlaying {
+            get { return this.TimeLine.Current; }
         }
 
-        public abstract bool SpawnJoin
-        {
-            get;
-        }
+        public SequenceManager SequencesManager { get; private set; }
+        public Synchronizer Synchronizer { get; protected set; }
 
-        public abstract bool PvP
-        {
-            get;
-        }
-
-        public abstract bool ShowBlades
-        {
-            get;
-        }
-
-        public int Id
-        {
-            get;
-            set;
-        }
-
-        public MapRecord Map
-        {
-            get;
-            set;
-        }
-
-        public short CellId
-        {
-            get;
-            set;
-        }
-
-        public FightTeam BlueTeam
-        {
-            get;
-            set;
-        }
-
-        public FightTeam RedTeam
-        {
-            get;
-            set;
-        }
-        public FightTeam Winners
-        {
-            get;
-            set;
-        }
-        public FightTeam Losers
-        {
-            get;
-            set;
-        }
-        public DateTime CreationTime
-        {
-            get;
-            private set;
-        }
-        public DateTime StartTime
-        {
-            get;
-            private set;
-        }
-        protected ActionTimer m_placementTimer
-        {
-            get;
-            set;
-        }
-        protected ActionTimer m_turnTimer
-        {
-            get;
-            set;
-        }
-        public TimeLine TimeLine
-        {
-            get;
-            private set;
-        }
-        public Fighter FighterPlaying
-        {
-            get
-            {
-                return this.TimeLine.Current;
-            }
-        }
-        public SequenceManager SequencesManager
-        {
-            get;
-            private set;
-        }
-        public Synchronizer Synchronizer
-        {
-            get;
-            protected set;
-        }
         /// <summary>
         /// Action<bool>Started = true, Placement = false</bool>
         /// </summary>
@@ -147,30 +76,14 @@ namespace Symbioz.World.Models.Fights
 
         private UniqueIdProvider m_markIdPopper = new UniqueIdProvider();
 
-        public bool Started
-        {
-            get;
-            set;
-        }
-        public short AgeBonus
-        {
-            get;
-            set;
-        }
-        public List<Mark> Marks
-        {
-            get;
-            private set;
-        }
-        public abstract bool MinationAllowed
-        {
-            get;
-        }
+        public bool Started { get; set; }
+        public short AgeBonus { get; set; }
+        public List<Mark> Marks { get; private set; }
+        public abstract bool MinationAllowed { get; }
 
         public bool Ended = false;
 
-        public Fight(MapRecord map, FightTeam blueTeam, FightTeam redTeam, short cellId)
-        {
+        public Fight(MapRecord map, FightTeam blueTeam, FightTeam redTeam, short cellId) {
             this.Id = FightProvider.Instance.PopId();
             this.Map = map;
             this.BlueTeam = blueTeam;
@@ -184,46 +97,42 @@ namespace Symbioz.World.Models.Fights
             this.CreationTime = DateTime.Now;
             this.Marks = new List<Mark>();
         }
+
         #region FightPreparation
-        public virtual void StartPlacement()
-        {
+
+        public virtual void StartPlacement() {
             //  Logger.Write<Fight>("Démarage du placement", ConsoleColor.DarkMagenta);
 
-            if (GetPreparationDelay() > 0)
-            {
-                this.m_placementTimer = new ActionTimer(GetPreparationDelay() * 1000, StartFighting, false);
+            if (this.GetPreparationDelay() > 0) {
+                this.m_placementTimer = new ActionTimer(this.GetPreparationDelay() * 1000, this.StartFighting, false);
                 this.m_placementTimer.Start();
             }
 
-            if (ShowBlades)
-            {
-                ShowBladesOnMap();
-                this.Send(GetIdolFightPreparationUpdateMessage());
+            if (this.ShowBlades) {
+                this.ShowBladesOnMap();
+                this.Send(this.GetIdolFightPreparationUpdateMessage());
             }
         }
-        public virtual IdolFightPreparationUpdateMessage GetIdolFightPreparationUpdateMessage()
-        {
+
+        public virtual IdolFightPreparationUpdateMessage GetIdolFightPreparationUpdateMessage() {
             return new IdolFightPreparationUpdateMessage(0, new Idol[0]);
         }
-        public virtual void OnSetReady(Fighter fighter, bool isReady)
-        {
-            this.Send(new GameFightHumanReadyStateMessage((ulong)fighter.Id, isReady));
-            this.CheckFightStart();
 
+        public virtual void OnSetReady(Fighter fighter, bool isReady) {
+            this.Send(new GameFightHumanReadyStateMessage((ulong) fighter.Id, isReady));
+            this.CheckFightStart();
         }
-        public void CheckFightStart()
-        {
-            if (this.RedTeam.AreAllReady() && this.BlueTeam.AreAllReady())
-            {
+
+        public void CheckFightStart() {
+            if (this.RedTeam.AreAllReady() && this.BlueTeam.AreAllReady()) {
                 this.StartFighting();
             }
         }
-        public virtual void StartFighting()
-        {
+
+        public virtual void StartFighting() {
             //   Logger.Write<Fight>("Lancement du combat!", ConsoleColor.DarkMagenta);
 
-            if (GetPreparationDelay() > 0)
-            {
+            if (this.GetPreparationDelay() > 0) {
                 this.m_placementTimer.Stop();
             }
 
@@ -231,95 +140,88 @@ namespace Symbioz.World.Models.Fights
 
             this.Started = true;
 
-            UpdateEntitiesPositions();
+            this.UpdateEntitiesPositions();
 
             this.Map.Instance.RemoveFightSword(this);
 
             this.TimeLine.OrderLine();
 
-            this.Send(GetGameFightStartMessage());
+            this.Send(this.GetGameFightStartMessage());
 
             this.UpdateTimeLine();
 
             this.OnFightStarted();
-
         }
-        public virtual GameFightStartMessage GetGameFightStartMessage()
-        {
+
+        public virtual GameFightStartMessage GetGameFightStartMessage() {
             return new GameFightStartMessage(new Idol[0]);
         }
-        public void Synchronize()
-        {
-            this.Send(new GameFightSynchronizeMessage(GetAllFighters().ConvertAll<GameFightFighterInformations>(x => x.GetFightFighterInformations()).ToArray()));
-        }
-        public void UpdateRound()
-        {
-            this.Send(new GameFightNewRoundMessage((uint)TimeLine.RoundNumber));
-        }
-        public virtual void OnFightStarted()
-        {
-            Synchronize();
-            UpdateRound();
 
-            foreach (var fighter in GetAllFighters())
-            {
+        public void Synchronize() {
+            this.Send(new GameFightSynchronizeMessage(this.GetAllFighters().ConvertAll<GameFightFighterInformations>(x => x.GetFightFighterInformations()).ToArray()));
+        }
+
+        public void UpdateRound() {
+            this.Send(new GameFightNewRoundMessage((uint) this.TimeLine.RoundNumber));
+        }
+
+        public virtual void OnFightStarted() {
+            this.Synchronize();
+            this.UpdateRound();
+
+            foreach (var fighter in this.GetAllFighters()) {
                 fighter.OnFightStarted();
             }
 
-            if (FightStartEvt != null)
-                FightStartEvt(this);
+            if (this.FightStartEvt != null) this.FightStartEvt(this);
 
-            StartTurn();
-
+            this.StartTurn();
         }
-        public short GetPlacementTimeLeft()
-        {
-            double num = (double)GetPreparationDelay() - (System.DateTime.Now - this.CreationTime).TotalSeconds;
-            if (num < 0.0)
-            {
+
+        public short GetPlacementTimeLeft() {
+            double num = (double) this.GetPreparationDelay() - (DateTime.Now - this.CreationTime).TotalSeconds;
+            if (num < 0.0) {
                 num = 0.0;
             }
-            return (short)((double)num * (double)10);
+
+            return (short) ((double) num * (double) 10);
         }
-        public virtual int GetPreparationDelay()
-        {
+
+        public virtual int GetPreparationDelay() {
             return 0;
         }
-        public void StartTurn()
-        {
+
+        public void StartTurn() {
             // Logger.Write<Fight>("Nouveau tour!", ConsoleColor.DarkMagenta);
-            if (Started && !Ended)
-            {
+            if (this.Started && !this.Ended) {
                 this.OnTurnStarted();
             }
         }
-        public virtual void OnTurnStarted()
-        {
+
+        public virtual void OnTurnStarted() {
             this.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_TURN_START);
             //     this.FighterPlaying.TriggerBuffs(BuffTriggerType.TURN_BEGIN, null);
             this.FighterPlaying.DecrementAllCastedBuffsDuration();
             this.FighterPlaying.DecrementBuffsDelay();
             this.FighterPlaying.DecrementMarkDurations();
-            this.FighterPlaying.TriggerMarks(FighterPlaying, MarkTriggerTypeEnum.ON_TURN_STARTED);
+            this.FighterPlaying.TriggerMarks(this.FighterPlaying, MarkTriggerTypeEnum.ON_TURN_STARTED);
             // this.TriggerMarks(this.FighterPlaying.Cell, this.FighterPlaying, TriggerType.TURN_BEGIN);
 
             this.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_TURN_START);
 
             this.CheckDeads();
 
-            if (!this.CheckFightEnd())
-            {
-                if (this.TimeLine.NewRound)
-                {
-                    UpdateRound();
+            if (!this.CheckFightEnd()) {
+                if (this.TimeLine.NewRound) {
+                    this.UpdateRound();
                 }
+
                 if (!this.FighterPlaying.Alive) // || this.FighterPlaying.MustSkipTurn()) (buff => corruption enutrof)
                 {
                     this.StopTurn();
                 }
-                else
-                {
-                    this.Send(new GameFightTurnStartMessage(this.FighterPlaying.Id, (uint)Fight.TurnTime * 10));
+                else {
+                    this.Send(new GameFightTurnStartMessage(this.FighterPlaying.Id, (uint) TurnTime * 10));
 
                     //  Synchronize(); a voir :/
 
@@ -330,76 +232,70 @@ namespace Symbioz.World.Models.Fights
                     //}
 
                     this.FighterPlaying.TurnStartCell = this.FighterPlaying.CellId;
-                    this.FighterPlaying.TurnStartTime = System.DateTime.Now;
+                    this.FighterPlaying.TurnStartTime = DateTime.Now;
 
-                    if (FighterPlaying.TriggerBuffs(TriggerType.TURN_BEGIN))
-                    {
-                        FighterPlaying.PassTurn();
+                    if (this.FighterPlaying.TriggerBuffs(TriggerType.TURN_BEGIN)) {
+                        this.FighterPlaying.PassTurn();
                     }
-                    else
-                    {
-                        this.m_turnTimer = new ActionTimer((int)Fight.TurnTime * 1000, FighterPlaying.PassTurn, false);
+                    else {
+                        this.m_turnTimer = new ActionTimer((int) TurnTime * 1000, this.FighterPlaying.PassTurn, false);
                         this.m_turnTimer.Start();
-                        FighterPlaying.OnTurnStarted();
+                        this.FighterPlaying.OnTurnStarted();
                     }
                 }
             }
         }
-        public void PointsVariation(int sourceId, int targetId, ActionsEnum action, short delta)
-        {
-            this.Send(new GameActionFightPointsVariationMessage((ushort)action, sourceId, targetId, delta));
+
+        public void PointsVariation(int sourceId, int targetId, ActionsEnum action, short delta) {
+            this.Send(new GameActionFightPointsVariationMessage((ushort) action, sourceId, targetId, delta));
         }
-        public void StopTurn()
-        {
-            if (!Ended)
-            {
-                if (this.m_turnTimer != null)
-                {
+
+        public void StopTurn() {
+            if (!this.Ended) {
+                if (this.m_turnTimer != null) {
                     this.m_turnTimer.Stop();
                 }
-                if (this.Synchronizer != null)
-                {
+
+                if (this.Synchronizer != null) {
                     //   this.logger.Alert("Last ReadyChecker was not disposed. (Stop Turn)");
                     this.Synchronizer.Cancel();
                     this.Synchronizer = null;
                 }
-                if (!this.CheckFightEnd())
-                {
+
+                if (!this.CheckFightEnd()) {
                     this.OnTurnStopped();
-                    this.Synchronizer = Synchronizer.RequestCheck(this, new Action(this.PassTurn), new System.Action<PlayableFighter[]>(this.LagAndPassTurn));
+                    this.Synchronizer = Synchronizer.RequestCheck(this, new Action(this.PassTurn), new Action<PlayableFighter[]>(this.LagAndPassTurn));
                 }
             }
         }
-        protected void LagAndPassTurn(PlayableFighter[] laggers)
-        {
+
+        protected void LagAndPassTurn(PlayableFighter[] laggers) {
             //  this.OnLaggersSpotted(laggers);
             this.PassTurn();
         }
-        protected virtual void OnLaggersSpotted(PlayableFighter[] laggers)
-        {
-            if (laggers.Length == 1)
-            {
 
-                this.Send(new TextInformationMessage((sbyte)TextInformationTypeEnum.TEXT_INFORMATION_ERROR, 28, new string[]
-                {
-                    laggers[0].Name
-                }));
+        protected virtual void OnLaggersSpotted(PlayableFighter[] laggers) {
+            if (laggers.Length == 1) {
+                this.Send(new TextInformationMessage((sbyte) TextInformationTypeEnum.TEXT_INFORMATION_ERROR,
+                                                     28,
+                                                     new string[] {
+                                                         laggers[0].Name
+                                                     }));
             }
-            else
-            {
-                if (laggers.Length > 1)
-                {
+            else {
+                if (laggers.Length > 1) {
                     string[] array = new string[1];
                     array[0] = string.Join(",",
-                        from entry in laggers
-                        select entry.Name);
-                    this.Send(new TextInformationMessage((sbyte)TextInformationTypeEnum.TEXT_INFORMATION_ERROR,
-                        29, array));
+                                           from entry in laggers
+                                           select entry.Name);
+                    this.Send(new TextInformationMessage((sbyte) TextInformationTypeEnum.TEXT_INFORMATION_ERROR,
+                                                         29,
+                                                         array));
                 }
             }
         }
-        protected virtual void OnTurnStopped()
-        {
+
+        protected virtual void OnTurnStopped() {
             //Logger.Write<Fight>("Fin d'un tour!", ConsoleColor.DarkMagenta);
 
             //if (this.SequencesManager.SequencesCount > 1)
@@ -409,39 +305,30 @@ namespace Symbioz.World.Models.Fights
             //}
 
 
-
-            if (!this.CheckFightEnd())
-            {
-                this.Send(new GameFightTurnEndMessage(FighterPlaying.Id));
+            if (!this.CheckFightEnd()) {
+                this.Send(new GameFightTurnEndMessage(this.FighterPlaying.Id));
             }
 
             this.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_TURN_END);
-            this.FighterPlaying.TriggerMarks(FighterPlaying, MarkTriggerTypeEnum.ON_TURN_ENDED);
+            this.FighterPlaying.TriggerMarks(this.FighterPlaying, MarkTriggerTypeEnum.ON_TURN_ENDED);
             this.FighterPlaying.TriggerBuffs(TriggerType.TURN_END);
             this.FighterPlaying.OnTurnEnded();
             this.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_TURN_END);
         }
-        private void PassTurn()
-        {
-            if (!Ended)
-            {
+
+        private void PassTurn() {
+            if (!this.Ended) {
                 this.Synchronizer = null;
 
 
-
-
                 this.SequencesManager.EndAllSequences();
-                if (!this.CheckFightEnd())
-                {
-                    if (!this.TimeLine.SelectNextFighter())
-                    {
-                        if (!this.CheckFightEnd())
-                        {
+                if (!this.CheckFightEnd()) {
+                    if (!this.TimeLine.SelectNextFighter()) {
+                        if (!this.CheckFightEnd()) {
                             this.logger.Error("Something goes wrong : no more actors are available to play but the fight is not ended");
                         }
                     }
-                    else
-                    {
+                    else {
                         this.OnTurnPassed();
                         this.StartTurn();
                     }
@@ -449,241 +336,216 @@ namespace Symbioz.World.Models.Fights
             }
         }
 
-        public void UpdateTeams()
-        {
-            if (!Started)
-            {
-                BlueTeam.Update();
-                RedTeam.Update();
+        public void UpdateTeams() {
+            if (!this.Started) {
+                this.BlueTeam.Update();
+                this.RedTeam.Update();
             }
         }
 
-        protected virtual void OnTurnPassed()
-        {
+        protected virtual void OnTurnPassed() { }
 
-
-        }
-        public void UpdateTimeLine()
-        {
+        public void UpdateTimeLine() {
             double[] ids = this.TimeLine.GetIds();
-            this.Send(new GameFightTurnListMessage(ids, GetDeads()));
+            this.Send(new GameFightTurnListMessage(ids, this.GetDeads()));
         }
-        public Fighter[] GetSummons(bool aliveOnly = true)
-        {
-            return GetFighters<IOwnable>(aliveOnly).Cast<Fighter>().ToArray();
+
+        public Fighter[] GetSummons(bool aliveOnly = true) {
+            return this.GetFighters<IOwnable>(aliveOnly).Cast<Fighter>().ToArray();
         }
-        private double[] GetDeads()
-        {
-            Fighter[] deads = GetAllFighters(false).FindAll(x => !(x is IOwnable) && !x.Alive).ToArray();
-            return Array.ConvertAll(deads, x => (double)x.Id);
+
+        private double[] GetDeads() {
+            Fighter[] deads = this.GetAllFighters(false).FindAll(x => !(x is IOwnable) && !x.Alive).ToArray();
+            return Array.ConvertAll(deads, x => (double) x.Id);
         }
-        public void ShowFighters(CharacterFighter fighter)
-        {
-            GetAllFighters().ForEach(x => x.ShowFighter(fighter));
+
+        public void ShowFighters(CharacterFighter fighter) {
+            this.GetAllFighters().ForEach(x => x.ShowFighter(fighter));
         }
-        public void UpdateFightersPlacementDirection()
-        {
-            foreach (var fighter in GetAllFighters())
-            {
+
+        public void UpdateFightersPlacementDirection() {
+            foreach (var fighter in this.GetAllFighters()) {
                 fighter.Direction = fighter.Team.FindPlacementDirection(fighter);
             }
         }
-        public void UpdateEntitiesPositions()
-        {
+
+        public void UpdateEntitiesPositions() {
             List<IdentifiedEntityDispositionInformations> positions = new List<IdentifiedEntityDispositionInformations>();
 
-            foreach (var fighter in GetAllFighters())
-            {
+            foreach (var fighter in this.GetAllFighters()) {
                 positions.Add(fighter.GetIdentifiedEntityDispositionInformations());
             }
+
             this.Send(new GameEntitiesDispositionMessage(positions.ToArray()));
         }
-        private void ShowBladesOnMap()
-        {
+
+        private void ShowBladesOnMap() {
             this.FindBladesPlacement();
             this.Map.Instance.AddFight(this);
         }
-        private void FindBladesPlacement()
-        {
-            if (this.RedTeam.Leader.MapCellId != this.BlueTeam.Leader.MapCellId)
-            {
+
+        private void FindBladesPlacement() {
+            if (this.RedTeam.Leader.MapCellId != this.BlueTeam.Leader.MapCellId) {
                 this.RedTeam.BladesCellId = this.RedTeam.Leader.MapCellId;
                 this.BlueTeam.BladesCellId = this.BlueTeam.Leader.MapCellId;
             }
-            else
-            {
+            else {
                 var randomAdjacentFreeCell = this.Map.CloseCellWithoutEntitiesPositions(this.RedTeam.Leader.MapCellId);
 
-                if (randomAdjacentFreeCell == 0)
-                {
+                if (randomAdjacentFreeCell == 0) {
                     this.RedTeam.BladesCellId = this.RedTeam.Leader.MapCellId;
                 }
-                else
-                {
+                else {
                     this.RedTeam.BladesCellId = randomAdjacentFreeCell;
                 }
+
                 this.BlueTeam.BladesCellId = this.BlueTeam.Leader.MapCellId;
             }
         }
-        public virtual void TryJoin(Character character, int leaderId)
-        {
+
+        public virtual void TryJoin(Character character, int leaderId) {
             FightTeam joinedTeam;
 
-            if (BlueTeam.Leader.Id == leaderId)
-                joinedTeam = BlueTeam;
-            else if (RedTeam.Leader.Id == leaderId)
-                joinedTeam = RedTeam;
-            else
-            {
+            if (this.BlueTeam.Leader.Id == leaderId)
+                joinedTeam = this.BlueTeam;
+            else if (this.RedTeam.Leader.Id == leaderId)
+                joinedTeam = this.RedTeam;
+            else {
                 character.ReplyError("Unable to find a team to join...");
                 return;
             }
 
-            if (joinedTeam.Options.CanJoin(character))
-            {
+            if (joinedTeam.Options.CanJoin(character)) {
                 joinedTeam.AddFighter(character.CreateFighter(joinedTeam));
             }
         }
-        public FightTeam GetTeam(TeamTypeEnum teamType)
-        {
-            if (BlueTeam.Type == teamType)
-                return BlueTeam;
-            if (RedTeam.Type == teamType)
-                return RedTeam;
+
+        public FightTeam GetTeam(TeamTypeEnum teamType) {
+            if (this.BlueTeam.Type == teamType)
+                return this.BlueTeam;
+            if (this.RedTeam.Type == teamType)
+                return this.RedTeam;
 
             throw new Exception("Unable to find team (" + teamType + ")");
         }
+
         public abstract void SendGameFightJoinMessage(CharacterFighter fighter);
 
         #endregion
-        public virtual void EndFight()
-        {
+
+        public virtual void EndFight() {
             //logger.Color2("Fin du combat...");
 
             if (this.FighterPlaying != null)
                 this.FighterPlaying.OnFightEndedWhilePlaying();
 
-            if (Started)
+            if (this.Started)
                 this.DeterminsWinners();
 
-            if (OnFightEndedEvt != null)
-                OnFightEndedEvt(this, Started);
+            if (this.OnFightEndedEvt != null) this.OnFightEndedEvt(this, this.Started);
 
-            if (Started)
-            {
+            if (this.Started) {
                 this.Synchronizer = null;
                 List<IFightResult> list = this.GenerateResults().ToList<IFightResult>();
 
                 this.ApplyResults(list);
-                this.Send(new GameFightEndMessage(GetFightDuration(), AgeBonus, 0, (from entry in list
-                                                                                    select entry.GetFightResultListEntry()).ToArray(),
-                                                                                    new NamedPartyTeamWithOutcome[0]));
+                this.Send(new GameFightEndMessage(this.GetFightDuration(),
+                                                  this.AgeBonus,
+                                                  0,
+                                                  (from entry in list
+                                                   select entry.GetFightResultListEntry()).ToArray(),
+                                                  new NamedPartyTeamWithOutcome[0]));
             }
 
-            foreach (CharacterFighter current in this.GetFighters<CharacterFighter>(false))
-            {
-                bool winner = current.Team == Winners ? true : false;
-                current.Character.RejoinMap(FightType, winner, SpawnJoin);
+            foreach (CharacterFighter current in this.GetFighters<CharacterFighter>(false)) {
+                bool winner = current.Team == this.Winners ? true : false;
+                current.Character.Record.Stats.LifePoints = current.Stats.CurrentLifePoints;
+                current.Character.RejoinMap(this.FightType, winner, this.SpawnJoin, current.Fight.FighterPlaying.Stats);
+
+                current.Character.BeginHealthRegeneration();
             }
 
 
-            Dispose();
+            this.Dispose();
         }
 
-        protected void ApplyResults(IEnumerable<IFightResult> results)
-        {
-            foreach (IFightResult current in results)
-            {
+        protected void ApplyResults(IEnumerable<IFightResult> results) {
+            foreach (IFightResult current in results) {
                 current.Apply();
             }
         }
 
         protected abstract IEnumerable<IFightResult> GenerateResults();
 
-        public int GetFightDuration()
-        {
-            return (!this.Started) ? 0 : ((int)(System.DateTime.Now - this.StartTime).TotalMilliseconds);
+        public int GetFightDuration() {
+            return (!this.Started) ? 0 : ((int) (DateTime.Now - this.StartTime).TotalMilliseconds);
         }
-        protected virtual void DeterminsWinners()
-        {
-            if (this.BlueTeam.Alives == 0)
-            {
+
+        protected virtual void DeterminsWinners() {
+            if (this.BlueTeam.Alives == 0) {
                 this.Winners = this.RedTeam;
                 this.Losers = this.BlueTeam;
             }
-            else if (this.RedTeam.Alives == 0)
-            {
-
+            else if (this.RedTeam.Alives == 0) {
                 this.Winners = this.BlueTeam;
                 this.Losers = this.RedTeam;
             }
         }
-        public virtual void Dispose()
-        {
+
+        public virtual void Dispose() {
             // Logger.Write<Fight>("Combat disposé!", ConsoleColor.DarkMagenta);
-            if (m_turnTimer != null)
-                m_turnTimer.Stop();
+            if (this.m_turnTimer != null) this.m_turnTimer.Stop();
 
-            if (m_placementTimer != null)
-                m_placementTimer.Stop();
+            if (this.m_placementTimer != null) this.m_placementTimer.Stop();
 
-            if (Synchronizer != null)
-            {
-                Synchronizer.Cancel();
-                Synchronizer = null;
+            if (this.Synchronizer != null) {
+                this.Synchronizer.Cancel();
+                this.Synchronizer = null;
             }
 
             this.RedTeam = null;
             this.BlueTeam = null;
-            Map.Instance.RemoveFight(this);
+            this.Map.Instance.RemoveFight(this);
             FightProvider.Instance.RemoveFight(this);
-
-
         }
-        public FightTeam GetWinner()
-        {
-            if (BlueTeam.Alives == 0)
-                return BlueTeam;
-            else if (RedTeam.Alives == 0)
-                return RedTeam;
-            else
-            {
-                logger.Error("Try to determine winners while fight running...");
+
+        public FightTeam GetWinner() {
+            if (this.BlueTeam.Alives == 0)
+                return this.BlueTeam;
+            else if (this.RedTeam.Alives == 0)
+                return this.RedTeam;
+            else {
+                this.logger.Error("Try to determine winners while fight running...");
                 return null;
             }
-
-
-        }
-        public short PopNextMarkId()
-        {
-            return (short)m_markIdPopper.Pop();
-        }
-        public int PopNextContextualId()
-        {
-            return m_contextualIdPopper.Pop();
         }
 
-        public void AddMark(Mark mark)
-        {
+        public short PopNextMarkId() {
+            return (short) this.m_markIdPopper.Pop();
+        }
+
+        public int PopNextContextualId() {
+            return this.m_contextualIdPopper.Pop();
+        }
+
+        public void AddMark(Mark mark) {
             bool seq = this.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_SPELL);
 
             this.Marks.Add(mark);
 
-            foreach (var fighter in GetFighters<CharacterFighter>(false))
-            {
+            foreach (var fighter in this.GetFighters<CharacterFighter>(false)) {
                 GameActionMark gameActionMark = null;
-                if (mark.IsVisibleFor(fighter))
-                {
+                if (mark.IsVisibleFor(fighter)) {
                     gameActionMark = mark.GetGameActionMark();
                 }
-                else
-                {
+                else {
                     gameActionMark = mark.GetHiddenGameActionMark();
                 }
+
                 fighter.Send(new GameActionFightMarkCellsMessage(0, mark.Source.Id, gameActionMark));
             }
 
-            foreach (var fighter in GetAllFighters()) // dont work
+            foreach (var fighter in this.GetAllFighters()) // dont work
             {
                 if (mark.ContainsCell(fighter.CellId))
                     fighter.TriggerMarks(fighter, MarkTriggerTypeEnum.ON_CAST);
@@ -692,19 +554,20 @@ namespace Symbioz.World.Models.Fights
             if (seq)
                 this.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_SPELL);
         }
-        public void RemoveMark(Fighter source, Mark mark)
-        {
+
+        public void RemoveMark(Fighter source, Mark mark) {
             this.Marks.Remove(mark);
             this.Send(new GameActionFightUnmarkCellsMessage(0, source.Id, mark.Id));
         }
-        public T[] GetMarks<T>(Predicate<T> predicate) where T : Mark
-        {
+
+        public T[] GetMarks<T>(Predicate<T> predicate) where T : Mark {
             return Array.FindAll(this.Marks.OfType<T>().ToArray(), predicate);
         }
-        public T[] GetMarks<T>() where T : Mark
-        {
+
+        public T[] GetMarks<T>() where T : Mark {
             return this.Marks.OfType<T>().ToArray();
         }
+
         /// <summary>
         ///  this.TimeLine.RemoveFighter(fighter);
         ///  this.TimeLine.InsertFighter(fighter, TimeLine.Index + 1);
@@ -714,225 +577,213 @@ namespace Symbioz.World.Models.Fights
         /// <param name="fighter"></param>
         /// <param name="cellId"></param>
         /// <param name="lifePercent"></param>
-        public void ReviveFighter(Fighter source, Fighter fighter, short cellId, short lifePercent)
-        {
+        public void ReviveFighter(Fighter source, Fighter fighter, short cellId, short lifePercent) {
             fighter.Alive = true;
             fighter.DeathTime = null;
             fighter.CellId = cellId;
             fighter.Direction = source.Point.OrientationTo(fighter.Point);
             fighter.Stats.CurrentLifePoints = fighter.Stats.CurrentMaxLifePoints.GetPercentageOf(lifePercent);
             this.TimeLine.RemoveFighter(fighter);
-            this.TimeLine.InsertFighter(fighter, TimeLine.Index + 1);
+            this.TimeLine.InsertFighter(fighter, this.TimeLine.Index + 1);
             this.Send(new GameActionFightSummonMessage(0, source.Id, new GameFightFighterInformations[] { fighter.GetFightFighterInformations() }));
             this.UpdateTimeLine();
         }
-        public void AddSummon<T>(T fighter) where T : Fighter, IOwnable
-        {
-            AddSummons(new T[] { fighter });
+
+        public void AddSummon<T>(T fighter) where T : Fighter, IOwnable {
+            this.AddSummons(new T[] { fighter });
         }
-        public void AddSummons<T>(T[] fighters) where T : Fighter, IOwnable
-        {
-            foreach (var fighter in fighters)
-            {
-                ((ISummon<Fighter>)(fighter)).Owner.Team.AddFighter(fighter);
+
+        public void AddSummons<T>(T[] fighters) where T : Fighter, IOwnable {
+            foreach (var fighter in fighters) {
+                ((ISummon<Fighter>) (fighter)).Owner.Team.AddFighter(fighter);
 
                 if (fighter.InsertInTimeline())
-                    this.TimeLine.InsertFighter(fighter, TimeLine.Index + 1);
+                    this.TimeLine.InsertFighter(fighter, this.TimeLine.Index + 1);
 
                 fighter.Initialize();
             }
 
-            this.Send(new GameActionFightSummonMessage(0, ((ISummon<Fighter>)(fighters.First())).Owner.Id, Array.ConvertAll(fighters, x => x.GetFightFighterInformations())));
+            this.Send(new GameActionFightSummonMessage(0, ((ISummon<Fighter>) (fighters.First())).Owner.Id, Array.ConvertAll(fighters, x => x.GetFightFighterInformations())));
             this.UpdateTimeLine();
-
         }
-        public void AddBomb<T>(T fighter, Fighter source) where T : BombFighter, ISummon<Fighter>
-        {
+
+        public void AddBomb<T>(T fighter, Fighter source) where T : BombFighter, ISummon<Fighter> {
             source.Team.AddFighter(fighter);
             fighter.Initialize();
             this.Send(new GameActionFightSummonMessage(0, source.Id, new GameFightFighterInformations[] { fighter.GetFightFighterInformations() }));
             BombProvider.Instance.UpdateWalls(fighter);
         }
-        public void HighlightCell(Color color, short cellId)
-        {
-            this.Send(new DebugHighlightCellsMessage(color.ToArgb(), new ushort[]
-                {
-                    (ushort)cellId
-                }));
+
+        public void HighlightCell(Color color, short cellId) {
+            this.Send(new DebugHighlightCellsMessage(color.ToArgb(),
+                                                     new ushort[] {
+                                                         (ushort) cellId
+                                                     }));
         }
-        public Wall AddWall(Fighter source, SpellLevelRecord level, EffectInstance effect, BombFighter firstBomb, BombFighter secondBomb, byte delta)
-        {
+
+        public Wall AddWall(Fighter source, SpellLevelRecord level, EffectInstance effect, BombFighter firstBomb, BombFighter secondBomb, byte delta) {
             var direction = firstBomb.Point.OrientationTo(secondBomb.Point, true);
-            Wall wall = new Wall((short)this.m_markIdPopper.Pop(), source, level, effect, firstBomb.Point.GetCellInDirection(direction, 1), Color.FromArgb(firstBomb.SpellBombRecord.WallColor),
-                firstBomb, secondBomb, delta, direction);
+            Wall wall = new Wall((short) this.m_markIdPopper.Pop(),
+                                 source,
+                                 level,
+                                 effect,
+                                 firstBomb.Point.GetCellInDirection(direction, 1),
+                                 Color.FromArgb(firstBomb.SpellBombRecord.WallColor),
+                                 firstBomb,
+                                 secondBomb,
+                                 delta,
+                                 direction);
             this.AddMark(wall);
             return wall;
         }
-        public void AddSummon<T>(T fighter, CharacterFighter source) where T : Fighter, ISummon<CharacterFighter>
-        {
+
+        public void AddSummon<T>(T fighter, CharacterFighter source) where T : Fighter, ISummon<CharacterFighter> {
             source.Team.AddFighter(fighter);
-            if (fighter.InsertInTimeline())
-            {
-                this.TimeLine.InsertFighter(fighter, TimeLine.Index + 1);
+            if (fighter.InsertInTimeline()) {
+                this.TimeLine.InsertFighter(fighter, this.TimeLine.Index + 1);
             }
+
             fighter.Initialize();
             this.Send(new GameActionFightSummonMessage(0, source.Id, new GameFightFighterInformations[] { fighter.GetFightFighterInformations() }));
-            if (fighter.InsertInTimeline())
-            {
+            if (fighter.InsertInTimeline()) {
                 this.UpdateTimeLine();
             }
-
         }
-        public void ShowCell(Fighter source, ushort cellId)
-        {
+
+        public void ShowCell(Fighter source, ushort cellId) {
             this.Send(new ShowCellMessage(source.Id, cellId));
         }
-        public bool ShouldTriggerOnMove(short cellId)
-        {
-            return Marks.Find(x => x.BreakMove && x.ContainsCell(cellId)) != null;
+
+        public bool ShouldTriggerOnMove(short cellId) {
+            return this.Marks.Find(x => x.BreakMove && x.ContainsCell(cellId)) != null;
         }
 
-        public void CheckDeads()
-        {
-            List<Fighter> fighters = GetAllFighters().FindAll(x => x.Alive == true && x.Stats.CurrentLifePoints <= 0);
+        public void CheckDeads() {
+            List<Fighter> fighters = this.GetAllFighters().FindAll(x => x.Alive == true && x.Stats.CurrentLifePoints <= 0);
 
-            if (fighters.Count > 0)
-            {
+            if (fighters.Count > 0) {
                 Fighter playingFighter = null;
 
-                bool seq = SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_CHARACTER_DEATH);
+                bool seq = this.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_CHARACTER_DEATH);
 
-                foreach (var fighter in fighters)
-                {
-                    if (fighter.IsFighterTurn)
-                    {
+                foreach (var fighter in fighters) {
+                    if (fighter.IsFighterTurn) {
                         playingFighter = fighter;
                     }
 
                     fighter.Die(fighter);
-
                 }
 
-                if (seq)
-                    SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_CHARACTER_DEATH);
+                if (seq) this.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_CHARACTER_DEATH);
 
-                if (playingFighter != null)// && !Ended)
+                if (playingFighter != null) // && !Ended)
                     playingFighter.PassTurn();
             }
         }
-        public virtual bool CheckFightEnd()
-        {
+
+        public virtual bool CheckFightEnd() {
             //  logger.Color2("Le combat se termine t-il?");
-            if (BlueTeam.Alives == 0 || RedTeam.Alives == 0 && !Ended)
-            {
-                if (Started)
-                {
-                    if (Synchronizer != null)
-                        Synchronizer.Cancel();
+            if (this.BlueTeam.Alives == 0 || this.RedTeam.Alives == 0 && !this.Ended) {
+                if (this.Started) {
+                    if (this.Synchronizer != null) this.Synchronizer.Cancel();
 
-                    Synchronizer = Synchronizer.RequestCheck(this, EndFight, delegate (PlayableFighter[] actors)
-                {
-                    EndFight();
-                });
-
+                    this.Synchronizer = Synchronizer.RequestCheck(this, this.EndFight, delegate(PlayableFighter[] actors) { this.EndFight(); });
                 }
                 else
-                    EndFight();
+                    this.EndFight();
 
-                Ended = true;
+                this.Ended = true;
             }
-            return Ended;
+
+            return this.Ended;
         }
-        public bool IsCellFree(short cellId)
-        {
-            return Map.WalkableDuringFight((ushort)cellId) && GetFighter(cellId) == null;
+
+        public bool IsCellFree(short cellId) {
+            return this.Map.WalkableDuringFight((ushort) cellId) && this.GetFighter(cellId) == null;
         }
-        public bool IsCellsFree(short[] cells)
-        {
-            foreach (var cell in cells)
-            {
-                if (!IsCellFree(cell))
+
+        public bool IsCellsFree(short[] cells) {
+            foreach (var cell in cells) {
+                if (!this.IsCellFree(cell))
                     return false;
             }
+
             return true;
         }
-        public virtual Challenge GetChallenge(ushort id)
-        {
+
+        public virtual Challenge GetChallenge(ushort id) {
             return null;
         }
-        public void Send(Message message)
-        {
-            GetFighters<CharacterFighter>(false).ForEach(x => x.Character.Client.Send(message));
+
+        public void Send(Message message) {
+            this.GetFighters<CharacterFighter>(false).ForEach(x => x.Character.Client.Send(message));
         }
-        public void Reply(string message)
-        {
-            GetFighters<CharacterFighter>(false).ForEach(x => x.Character.Reply(message));
+
+        public void Reply(string message) {
+            this.GetFighters<CharacterFighter>(false).ForEach(x => x.Character.Reply(message));
         }
-        public T GetFirstFighter<T>(Func<T, bool> predicate, bool aliveOnly = true) where T : Fighter
-        {
-            return GetFighters<T>(aliveOnly).FirstOrDefault(predicate);
+
+        public T GetFirstFighter<T>(Func<T, bool> predicate, bool aliveOnly = true) where T : Fighter {
+            return this.GetFighters<T>(aliveOnly).FirstOrDefault(predicate);
         }
-        public Fighter GetFighter(MapPoint point)
-        {
-            return GetFighter(point.CellId);
+
+        public Fighter GetFighter(MapPoint point) {
+            return this.GetFighter(point.CellId);
         }
-        public Fighter GetFighter(short cellid)
-        {
-            return GetAllFighters().Find(x => x.CellId == cellid);
+
+        public Fighter GetFighter(short cellid) {
+            return this.GetAllFighters().Find(x => x.CellId == cellid);
         }
-        public short RandomFreeCell()
-        {
-            return (short)Array.FindAll(Map.WalkableCells, x => IsCellFree((short)x)).Random();
+
+        public short RandomFreeCell() {
+            return (short) Array.FindAll(this.Map.WalkableCells, x => this.IsCellFree((short) x)).Random();
         }
-        public Fighter GetFighter(int contextualid)
-        {
-            return GetAllFighters().Find(x => x.Id == contextualid);
+
+        public Fighter GetFighter(int contextualid) {
+            return this.GetAllFighters().Find(x => x.Id == contextualid);
         }
-        public List<T> GetFighters<T>(bool aliveOnly = true)
-        {
-            return GetAllFighters(aliveOnly).OfType<T>().ToList();
+
+        public List<T> GetFighters<T>(bool aliveOnly = true) {
+            return this.GetAllFighters(aliveOnly).OfType<T>().ToList();
         }
-        public List<Fighter> GetAllFighters(bool aliveOnly = true)
-        {
+
+        public List<Fighter> GetAllFighters(bool aliveOnly = true) {
             List<Fighter> fighters = new List<Fighter>();
-            fighters.AddRange(RedTeam.GetFighters(aliveOnly));
-            fighters.AddRange(BlueTeam.GetFighters(aliveOnly));
+            fighters.AddRange(this.RedTeam.GetFighters(aliveOnly));
+            fighters.AddRange(this.BlueTeam.GetFighters(aliveOnly));
             return fighters;
         }
-        public List<Fighter> GetAllFightersWithLeavers()
-        {
-            var fighters = GetAllFighters(false);
-            fighters.AddRange(RedTeam.GetLeavers());
-            fighters.AddRange(BlueTeam.GetLeavers());
+
+        public List<Fighter> GetAllFightersWithLeavers() {
+            var fighters = this.GetAllFighters(false);
+            fighters.AddRange(this.RedTeam.GetLeavers());
+            fighters.AddRange(this.BlueTeam.GetLeavers());
             return fighters;
         }
-        public void OnFighters<T1>(Action<T1> action) where T1 : Fighter
-        {
-            foreach (var fighter in GetAllFighters().OfType<T1>())
-            {
+
+        public void OnFighters<T1>(Action<T1> action) where T1 : Fighter {
+            foreach (var fighter in this.GetAllFighters().OfType<T1>()) {
                 action(fighter);
             }
         }
-        public void TeleportFightersToInitialPosition(Fighter source)
-        {
-            bool sequence = SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_MOVE);
-            foreach (var fighter in GetAllFighters())
-            {
+
+        public void TeleportFightersToInitialPosition(Fighter source) {
+            bool sequence = this.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_MOVE);
+            foreach (var fighter in this.GetAllFighters()) {
                 if (fighter.CellId != fighter.FightStartCell)
                     fighter.Teleport(source, new MapPoint(fighter.FightStartCell));
             }
 
-            if (sequence)
-                SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_MOVE);
+            if (sequence) this.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_MOVE);
         }
-        public bool CanBeSeen(short from, short to, bool throughEntities = false)
-        {
+
+        public bool CanBeSeen(short from, short to, bool throughEntities = false) {
             if (from == to)
                 return true;
 
             var occupiedCells = new short[0];
             if (!throughEntities)
-                occupiedCells = GetAllFighters(true).FindAll(x => x.BlockSight).Select(x => x.CellId).ToArray(); 
+                occupiedCells = this.GetAllFighters(true).FindAll(x => x.BlockSight).Select(x => x.CellId).ToArray();
 
             var line = new LineSet(new MapPoint(from), new MapPoint(to));
 
@@ -940,39 +791,35 @@ namespace Symbioz.World.Models.Fights
             return !(from point in list
                      where to != point.CellId
                      let cell = point.CellId
-                     where !Map.LineOfSight(cell) || !throughEntities && Array.IndexOf(occupiedCells, point.CellId) != -1
+                     where !this.Map.LineOfSight(cell) || !throughEntities && Array.IndexOf(occupiedCells, point.CellId) != -1
                      select point).Any();
         }
-        public bool CanBeSeenOld(short from, short to, bool throughEntities = false)
-        {
+
+        public bool CanBeSeenOld(short from, short to, bool throughEntities = false) {
             bool result;
 
-            if (from == to)
-            {
+            if (from == to) {
                 result = true;
             }
-            else
-            {
+            else {
                 short[] array = new short[0];
-                if (!throughEntities)
-                {
+                if (!throughEntities) {
                     array = (
-                        from x in this.GetAllFighters(true)
-                        select x.CellId).ToArray<short>();
+                                from x in this.GetAllFighters(true)
+                                select x.CellId).ToArray<short>();
                 }
-                System.Collections.Generic.IEnumerable<MapPoint> cellsInLine = MapPoint.GetPoint(from).GetCellsInLine(MapPoint.GetPoint(to));
-                foreach (MapPoint current in cellsInLine.Skip(1))
-                {
-                    if (to != current.CellId)
-                    {
+
+                IEnumerable<MapPoint> cellsInLine = MapPoint.GetPoint(from).GetCellsInLine(MapPoint.GetPoint(to));
+                foreach (MapPoint current in cellsInLine.Skip(1)) {
+                    if (to != current.CellId) {
                         short cell = current.CellId;
-                        if (!Map.LineOfSight(cell) || (!throughEntities && System.Array.IndexOf<short>(array, current.CellId) != -1))
-                        {
+                        if (!this.Map.LineOfSight(cell) || (!throughEntities && Array.IndexOf<short>(array, current.CellId) != -1)) {
                             result = false;
                             return result;
                         }
                     }
                 }
+
                 result = true;
             }
 
@@ -982,29 +829,32 @@ namespace Symbioz.World.Models.Fights
 
         public abstract FightCommonInformations GetFightCommonInformations();
 
-        public virtual FightExternalInformations GetExternalInformations()
-        {
-            return new FightExternalInformations(Id, (sbyte)FightType, 0, false, GetFightTeamLightInformations(),
-                new FightOptionsInformations[2] { RedTeam.Options.GetFightOptionsInformations(),
-                    BlueTeam.Options.GetFightOptionsInformations() });
+        public virtual FightExternalInformations GetExternalInformations() {
+            return new FightExternalInformations(this.Id,
+                                                 (sbyte) this.FightType,
+                                                 0,
+                                                 false,
+                                                 this.GetFightTeamLightInformations(),
+                                                 new FightOptionsInformations[2] {
+                                                     this.RedTeam.Options.GetFightOptionsInformations(), this.BlueTeam.Options.GetFightOptionsInformations()
+                                                 });
         }
 
-        public FightTeamLightInformations[] GetFightTeamLightInformations()
-        {
-            return new FightTeamLightInformations[2] { RedTeam.GetFightTeamLightInformations(),
-                BlueTeam.GetFightTeamLightInformations() };
+        public FightTeamLightInformations[] GetFightTeamLightInformations() {
+            return new FightTeamLightInformations[2] {
+                this.RedTeam.GetFightTeamLightInformations(), this.BlueTeam.GetFightTeamLightInformations()
+            };
         }
-        public FightTeamInformations[] GetFightTeamInformations()
-        {
-            return new FightTeamInformations[2] {RedTeam.GetFightTeamInformations(),
-                BlueTeam.GetFightTeamInformations()};
+
+        public FightTeamInformations[] GetFightTeamInformations() {
+            return new FightTeamInformations[2] {
+                this.RedTeam.GetFightTeamInformations(), this.BlueTeam.GetFightTeamInformations()
+            };
         }
-        public FightOptionsInformations[] GetFightOptionsInformations()
-        {
-            return new FightOptionsInformations[]
-            {
-                    RedTeam.Options.GetFightOptionsInformations(),
-                    BlueTeam.Options.GetFightOptionsInformations()
+
+        public FightOptionsInformations[] GetFightOptionsInformations() {
+            return new FightOptionsInformations[] {
+                this.RedTeam.Options.GetFightOptionsInformations(), this.BlueTeam.Options.GetFightOptionsInformations()
             };
         }
     }

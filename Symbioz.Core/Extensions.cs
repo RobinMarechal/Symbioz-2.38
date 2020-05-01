@@ -27,19 +27,19 @@ namespace Symbioz.Core
         }
         public static int GetPercentageOf(this int value, int percentage)
         {
-            return (int)((double)value * (double)((double)percentage / (double)100));
+            return (int)(value * (percentage / (double)100));
         }
         public static int Percentage(this int current, int lenght)
         {
-            return (int)(((double)current / (double)lenght) * (double)100);
+            return (int)((current / (double)lenght) * 100);
         }
         public static long Percentage(this long current, long lenght)
         {
-            return (long)(((double)current / (double)lenght) * 100d);
+            return (long)((current / (double)lenght) * 100d);
         }
         public static long GetPercentageOf(this long value, int percentage)
         {
-            return (long)((double)value * (double)((double)percentage / (double)100));
+            return (long)(value * (percentage / (double)100));
         }
         public static T Random<T>(this IEnumerable<T> enumerable)
         {

@@ -50,53 +50,53 @@ namespace Symbioz.World.Models.Exchanges
         }
         public void MoveItemPriced(uint uid, int quantity, uint price)
         {
-            CharacterItemRecord item = Character.Inventory.GetItem(uid);
+            CharacterItemRecord item = this.Character.Inventory.GetItem(uid);
 
             if (item != null && item.Quantity >= quantity && item.CanBeExchanged())
             {
-                BidShopItemRecord selledItem = item.ToBidShopItemRecord(BidShop.Id, Character.Client.Account.Id, price);
+                BidShopItemRecord selledItem = item.ToBidShopItemRecord(this.BidShop.Id, this.Character.Client.Account.Id, price);
                 selledItem.Quantity = (uint)quantity;
-                Character.Inventory.RemoveItem(item.UId, (uint)quantity);
-                AddSelledItem(selledItem);
+                this.Character.Inventory.RemoveItem(item.UId, (uint)quantity);
+                this.AddSelledItem(selledItem);
             }
         }
         public void ModifyItemPriced(uint uid, int quantity, uint price)
         {
-            BidShopItemRecord item = GetSelledItem(uid);
+            BidShopItemRecord item = this.GetSelledItem(uid);
 
             if (item != null)
             {
                 item.Price = price;
                 item.Quantity = (uint)quantity;
                 item.UpdateElement();
-                Open();
+                this.Open();
             }
         }
         public void AddSelledItem(BidShopItemRecord item)
         {
             item.AddElement();
-            SelledItems.Add(item);
-            Character.Client.Send(new ExchangeBidHouseItemAddOkMessage(item.GetObjectItemToSellInBid()));
+            this.SelledItems.Add(item);
+            this.Character.Client.Send(new ExchangeBidHouseItemAddOkMessage(item.GetObjectItemToSellInBid()));
 
         }
         public override void MoveItem(uint uid, int quantity)
         {
             if (quantity < 0)
             {
-                BidShopItemRecord item = GetSelledItem(uid);
+                BidShopItemRecord item = this.GetSelledItem(uid);
 
                 if (item != null && item.Quantity >= Math.Abs(quantity))
                 {
                     item.RemoveElement();
-                    SelledItems.Remove(item);
-                    Character.Inventory.AddItem(item.ToCharacterItemRecord(Character.Id));
-                    Character.Client.Send(new ExchangeBidHouseItemRemoveOkMessage((int)uid));
+                    this.SelledItems.Remove(item);
+                    this.Character.Inventory.AddItem(item.ToCharacterItemRecord(this.Character.Id));
+                    this.Character.Client.Send(new ExchangeBidHouseItemRemoveOkMessage((int)uid));
                 }
             }
         }
         public BidShopItemRecord GetSelledItem(uint uid)
         {
-            return SelledItems.Find(x => x.UId == uid);
+            return this.SelledItems.Find(x => x.UId == uid);
         }
         public override void Ready(bool ready, ushort step)
         {
@@ -110,9 +110,9 @@ namespace Symbioz.World.Models.Exchanges
 
         public override void Open()
         {
-            this.SelledItems = BidShopItemRecord.GetSellerItems(BidShop.Id, Character.Client.Account.Id);
-            Character.Client.Send(new ExchangeStartedBidSellerMessage(BidShop.GetBuyerDescriptor((int)Npc.Id),
-               SelledItems.ConvertAll<ObjectItemToSellInBid>(x => x.GetObjectItemToSellInBid()).ToArray()));
+            this.SelledItems = BidShopItemRecord.GetSellerItems(this.BidShop.Id, this.Character.Client.Account.Id);
+            this.Character.Client.Send(new ExchangeStartedBidSellerMessage(this.BidShop.GetBuyerDescriptor((int) this.Npc.Id),
+                                                                           this.SelledItems.ConvertAll<ObjectItemToSellInBid>(x => x.GetObjectItemToSellInBid()).ToArray()));
         }
 
     }

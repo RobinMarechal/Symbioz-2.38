@@ -74,5 +74,10 @@ namespace Symbioz.World.Handlers.Fight {
                 client.Character.Fighter.Team.ShowCell(client.Character.Fighter, message.cellId);
             }
         }
+
+        [MessageHandler]
+        public static void HandleGameFightStartMessage(GameFightStartMessage message, WorldClient client) {
+            client.Character.Reply("MSG GameFightStartMessage");
+        }
     }
 }

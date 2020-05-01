@@ -43,9 +43,9 @@ namespace Symbioz.World.Providers.Arena {
             this.Character.Client.Send(new GameRolePlayArenaFightPropositionMessage(0, Array.ConvertAll(this.Team.GetMemberIds(), x => (double) x), this.Group.RequestDuration));
         }
 
-        public void RejoinMap() {
-            this.Character.RejoinMap(FightTypeEnum.FIGHT_TYPE_PVP_ARENA, false, true);
-        }
+        // public void RejoinMap() {
+        //     this.Character.RejoinMap(FightTypeEnum.FIGHT_TYPE_PVP_ARENA, false, true);
+        // }
 
         private void UpdateFighterStatus() {
             this.Group.Send(new GameRolePlayArenaFighterStatusMessage(0, (int) this.Character.Id, this.Accepted));

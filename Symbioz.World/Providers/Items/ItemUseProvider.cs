@@ -57,7 +57,7 @@ namespace Symbioz.World.Providers.Items {
                         }
                     }
                     else {
-                        //   character.Reply(effect.EffectEnum + " is not handled");
+                        character.Reply(effect.EffectEnum + " is not handled");
                         return false;
                     }
                 }
@@ -373,6 +373,24 @@ namespace Symbioz.World.Providers.Items {
             else {
                 return false;
             }
+        }
+
+
+        [ItemUse(EffectsEnum.Effect_AddHealth)]
+        public static bool AddHealth(Character character, EffectInteger effect) {
+            int missingHp = character.Record.Stats.MaxLifePoints - character.Record.Stats.LifePoints;
+            if (missingHp == 0) {
+                return false;
+            }
+
+            if (missingHp <= effect.Value) {
+                character.Record.Stats.LifePoints = character.Record.Stats.MaxLifePoints - 1;
+            }
+            else {
+                character.Record.Stats.LifePoints += effect.Value;
+            }
+
+            return true;
         }
     }
 }

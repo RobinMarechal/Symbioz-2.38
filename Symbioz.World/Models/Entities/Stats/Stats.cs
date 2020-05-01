@@ -497,10 +497,7 @@ namespace Symbioz.World.Models.Entities.Stats
                 trapBonusPercent = TrapBonusPercent.GetBaseCharacteristic(),
                 weaponDamagesBonusPercent = WeaponDamagesBonusPercent.GetBaseCharacteristic(),
                 wisdom = Wisdom.GetBaseCharacteristic(),
-                probationTime = 0,
-
-
-
+                probationTime = 0
             };
 
             return informations;

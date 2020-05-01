@@ -34,7 +34,7 @@ namespace Symbioz.World.Models.Exchanges
         {
             get
             {
-                return BidShopItemRecord.GetBidShopItems(BidShop.Id);
+                return BidShopItemRecord.GetBidShopItems(this.BidShop.Id);
             }
         }
 
@@ -49,35 +49,34 @@ namespace Symbioz.World.Models.Exchanges
 
         public void ShowTypes(uint type)
         {
-            GIdWatched = 0;
-            Character.Client.Send(new ExchangeTypesExchangerDescriptionForUserMessage(GetGIDs((ItemTypeEnum)type)));
+            this.GIdWatched = 0;
+            this.Character.Client.Send(new ExchangeTypesExchangerDescriptionForUserMessage(this.GetGIDs((ItemTypeEnum)type)));
         }
         public void ShowList(ushort gid)
         {
-            GIdWatched = gid;
-            Character.Client.Send(new ExchangeTypesItemsExchangerDescriptionForUserMessage(
-               (SortedItems(GetItemsByGId(gid)))));
+            this.GIdWatched = gid;
+            this.Character.Client.Send(new ExchangeTypesItemsExchangerDescriptionForUserMessage(
+                                           (this.SortedItems(this.GetItemsByGId(gid)))));
         }
         private BidShopItemRecord GetItem(uint uid)
         {
-            return Items.Find(x => x.UId == uid);
+            return this.Items.Find(x => x.UId == uid);
         }
         public void Buy(uint uid, uint quantity, uint price)
         {
-            BidShopItemRecord item = GetItem(uid);
+            BidShopItemRecord item = this.GetItem(uid);
 
             if (item != null)
             {
                 if (item.Price == price)
                 {
-                    if (Character.RemoveKamas((int)price))
+                    if (this.Character.RemoveKamas((int)price))
                     {
-                        Character.Inventory.AddItem(item.ToCharacterItemRecord(Character.Id));
+                        this.Character.Inventory.AddItem(item.ToCharacterItemRecord(this.Character.Id));
                         item.RemoveElement();
-                        ShowList(item.GId);
+                        this.ShowList(item.GId);
 
-                        if (Items.Count(x => x.GId == item.GId) == 0)
-                            RemoveGId(item.GId);
+                        if (this.Items.Count(x => x.GId == item.GId) == 0) this.RemoveGId(item.GId);
 
                         this.AddGain(item);
 
@@ -86,19 +85,19 @@ namespace Symbioz.World.Models.Exchanges
             }
             else
             {
-                Character.TextInformation(TextInformationTypeEnum.TEXT_INFORMATION_MESSAGE, 64);
-                ShowList(GIdWatched);
-                ShowTypes(GIdWatched);
+                this.Character.TextInformation(TextInformationTypeEnum.TEXT_INFORMATION_MESSAGE, 64);
+                this.ShowList(this.GIdWatched);
+                this.ShowTypes(this.GIdWatched);
             }
         }
 
         public void RemoveGId(ushort gid)
         {
-            Character.Client.Send(new ExchangeBidHouseGenericItemRemovedMessage(gid));
+            this.Character.Client.Send(new ExchangeBidHouseGenericItemRemovedMessage(gid));
         }
         private List<BidShopItemRecord> GetItemsByGId(ushort gid)
         {
-            return Items.FindAll(x => x.GId == gid);
+            return this.Items.FindAll(x => x.GId == gid);
         }
 
         private BidExchangerObjectInfo[] SortedItems(List<BidShopItemRecord> items)
@@ -111,11 +110,11 @@ namespace Symbioz.World.Models.Exchanges
 
                 int[] prices = new int[3];
 
-                for (int i = 0; i < BidShop.Quantities.Count; i++)
+                for (int i = 0; i < this.BidShop.Quantities.Count; i++)
                 {
                     int quantityPrice = 0;
 
-                    List<BidShopItemRecord> sortedItems = itemsData.FindAll(x => x.Quantity == BidShop.Quantities[i]).OrderBy(x => x.Price).ToList();
+                    List<BidShopItemRecord> sortedItems = itemsData.FindAll(x => x.Quantity == this.BidShop.Quantities[i]).OrderBy(x => x.Price).ToList();
 
                     if (sortedItems.Count > 0)
                     {
@@ -132,7 +131,7 @@ namespace Symbioz.World.Models.Exchanges
         }
         private uint[] GetGIDs(ItemTypeEnum type)
         {
-            var items = Items.FindAll(x => x.Template.TypeEnum == type);
+            var items = this.Items.FindAll(x => x.Template.TypeEnum == type);
             return items.ConvertAll<uint>(x => x.GId).Distinct().ToArray();
         }
         public override void MoveItem(uint uid, int quantity)
@@ -156,7 +155,7 @@ namespace Symbioz.World.Models.Exchanges
 
         public override void Open()
         {
-            Character.Client.Send(new ExchangeStartedBidBuyerMessage(BidShop.GetBuyerDescriptor((int)Npc.Id)));
+            this.Character.Client.Send(new ExchangeStartedBidBuyerMessage(this.BidShop.GetBuyerDescriptor((int) this.Npc.Id)));
         }
         public void AddGain(BidShopItemRecord item)
         {

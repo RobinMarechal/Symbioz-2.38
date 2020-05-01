@@ -9,14 +9,13 @@ using Symbioz.World.Records.Spells;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Symbioz.World.Records.Monsters
-{
+namespace Symbioz.World.Records.Monsters {
     [Table("Monsters", true, 9)]
-    public class MonsterRecord : ITable
-    {
+    public class MonsterRecord : ITable {
         public static List<MonsterRecord> Monsters = new List<MonsterRecord>();
 
         [Primary]
@@ -59,10 +58,21 @@ namespace Symbioz.World.Records.Monsters
 
         public string BehaviorName;
 
-        public MonsterRecord(ushort id, string name, ContextActorLook look, bool isBoss, bool isMiniboss, short race,
-            bool useSummonSlot, bool useBombSlot, List<MonsterDrop> drops, List<ushort> spells, List<MonsterGrade> grades,
-            int minDroppedKamas, int maxDroppedKamas, int power, string behaviorName)
-        {
+        public MonsterRecord(ushort id,
+                             string name,
+                             ContextActorLook look,
+                             bool isBoss,
+                             bool isMiniboss,
+                             short race,
+                             bool useSummonSlot,
+                             bool useBombSlot,
+                             List<MonsterDrop> drops,
+                             List<ushort> spells,
+                             List<MonsterGrade> grades,
+                             int minDroppedKamas,
+                             int maxDroppedKamas,
+                             int power,
+                             string behaviorName) {
             this.Id = id;
             this.Name = name;
             this.Look = look;
@@ -80,27 +90,31 @@ namespace Symbioz.World.Records.Monsters
             this.Power = power;
             this.BehaviorName = behaviorName;
         }
-        public bool GradeExist(sbyte gradeId)
-        {
+
+        public bool GradeExist(sbyte gradeId) {
             return Grades.Count >= gradeId;
         }
-        public MonsterGrade LastGrade()
-        {
+
+        public MonsterGrade LastGrade() {
             return Grades.Last();
         }
-        public MonsterGrade GetGrade(sbyte gradeId)
-        {
+
+        public MonsterGrade GetGrade(sbyte gradeId) {
             return Grades[gradeId - 1];
         }
-        public sbyte RandomGrade(AsyncRandom random)
-        {
-            sbyte value = (sbyte)(random.Next(1, Grades.Count + 1));
+
+        public sbyte RandomGrade(AsyncRandom random) {
+            sbyte value = (sbyte) (random.Next(1, Grades.Count + 1));
             return value;
         }
-        public static MonsterRecord GetMonster(ushort id)
-        {
+
+        public static MonsterRecord GetMonster(ushort id) {
             return Monsters.Find(x => x.Id == id);
         }
 
+        public static int GetNextDropId() {
+            return Monsters.ConvertAll(m => m.Drops.Count == 0 ? 0 : m.Drops.ConvertAll(d => d.DropId).Max())
+                           .Max() + 1;
+        }
     }
 }

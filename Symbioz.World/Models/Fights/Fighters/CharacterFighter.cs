@@ -1,4 +1,7 @@
-﻿using SSync.Messages;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using SSync.Messages;
 using Symbioz.Protocol.Enums;
 using Symbioz.Protocol.Messages;
 using Symbioz.Protocol.Selfmade.Enums;
@@ -11,184 +14,113 @@ using Symbioz.World.Models.Fights.Results;
 using Symbioz.World.Models.Fights.Spells;
 using Symbioz.World.Models.Maps;
 using Symbioz.World.Providers.Items;
-using Symbioz.World.Records.Characters;
-using Symbioz.World.Records.Items;
-using Symbioz.World.Records.Monsters;
-using Symbioz.World.Records.Spells;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Symbioz.World.Records.Idols;
+using Symbioz.World.Records.Items;
+using Symbioz.World.Records.Spells;
 
-namespace Symbioz.World.Models.Fights.Fighters
-{
-    public class CharacterFighter : PlayableFighter
-    {
+namespace Symbioz.World.Models.Fights.Fighters {
+    public class CharacterFighter : PlayableFighter {
         public event Action OnLeavePreFightEvt;
 
         public event Action<Fighter> OnWeaponUsedEvt;
 
-        public Character Character
-        {
-            get;
-            set;
-        }
+        public Character Character { get; set; }
 
-        public override string Name
-        {
-            get
-            {
-                return Character.Name;
-            }
-        }
+        public override string Name => this.Character.Name;
 
-        public override ushort Level
-        {
-            get
-            {
-                return Character.Level;
-            }
-        }
+        public override ushort Level => this.Character.Level;
 
-        public override bool Sex
-        {
-            get
-            {
-                return Character.Record.Sex;
-            }
-        }
-        private SpellLevelRecord WeaponLevel
-        {
-            get;
-            set;
-        }
-        private WeaponRecord WeaponTemplate
-        {
-            get;
-            set;
-        }
-        private bool HasWeaponEquiped
-        {
-            get
-            {
-                return WeaponTemplate != null;
-            }
-        }
+        public override bool Sex => this.Character.Record.Sex;
+
+        private SpellLevelRecord WeaponLevel { get; set; }
+        private WeaponRecord WeaponTemplate { get; set; }
+        private bool HasWeaponEquiped => this.WeaponTemplate != null;
+
         public CharacterFighter(Character character, FightTeam team, ushort mapPosition)
-            : base(team, mapPosition)
-        {
+            : base(team, mapPosition) {
             this.Character = character;
         }
-        public override void Initialize()
-        {
-            this.Id = (int)Character.Id;
-            this.Look = Character.Look.Clone();
-            this.Stats = new FighterStats(Character);
 
-            if (Character.Inventory.HasWeaponEquiped)
-            {
-                this.WeaponTemplate = WeaponRecord.GetWeapon(Character.Inventory.GetWeapon().GId);
-                this.WeaponLevel = WeaponManager.Instance.GetWeaponSpellLevel(WeaponTemplate);
+        public override void Initialize() {
+            this.Id = (int) this.Character.Id;
+            this.Look = this.Character.Look.Clone();
+            this.Stats = new FighterStats(this.Character);
+
+            if (this.Character.Inventory.HasWeaponEquiped) {
+                this.WeaponTemplate = WeaponRecord.GetWeapon(this.Character.Inventory.GetWeapon().GId);
+                this.WeaponLevel = WeaponManager.Instance.GetWeaponSpellLevel(this.WeaponTemplate);
             }
 
             base.Initialize();
         }
-        public override void OnTurnStarted()
-        {
-         
-            SendFighterStatsList();
+
+        public override void OnTurnStarted() {
+            this.SendFighterStatsList();
             base.OnTurnStarted();
         }
-        public override void OnJoined()
-        {
+
+        public override void OnJoined() {
             this.Fight.SendGameFightJoinMessage(this);
-            ShowPlacementCells();
+            this.ShowPlacementCells();
             this.Fight.ShowFighters(this);
             this.ShowReadyFighters();
             base.OnJoined();
         }
-        public void ShowReadyFighters()
-        {
-            foreach (var fighter in Fight.GetFighters<CharacterFighter>().FindAll(x => x.IsReady))
-            {
-                Character.Client.Send(new GameFightHumanReadyStateMessage((ulong)fighter.Id, true));
+
+        public void ShowReadyFighters() {
+            foreach (var fighter in this.Fight.GetFighters<CharacterFighter>().FindAll(x => x.IsReady)) {
+                this.Character.Client.Send(new GameFightHumanReadyStateMessage((ulong) fighter.Id, true));
             }
         }
-        public void ToggleReady(bool isReady)
-        {
+
+        public void ToggleReady(bool isReady) {
             this.IsReady = isReady;
-            Fight.OnSetReady(this, IsReady);
-        }
-        public void SendFighterStatsList()
-        {
-            Character.Client.Send(new FighterStatsListMessage(Stats.GetCharacterCharacteristics(Character)));
+            this.Fight.OnSetReady(this, this.IsReady);
         }
 
-        public IdolRecord[] GetIdols()
-        {
-            return Character.Record.Idols.ConvertAll(x => IdolRecord.GetIdol(x)).ToArray();
+        public void SendFighterStatsList() {
+            this.Character.Client.Send(new FighterStatsListMessage(this.Stats.GetCharacterCharacteristics(this.Character)));
         }
 
-        public override void Move(List<short> movementKeys)
-        {
+        public IdolRecord[] GetIdols() {
+            return this.Character.Record.Idols.ConvertAll(IdolRecord.GetIdol).ToArray();
+        }
+
+        public override void Move(List<short> movementKeys) {
             base.Move(movementKeys.ToList());
         }
-        public override void OnTurnEnded()
-        {
-            base.OnTurnEnded();
-        }
-        public void OnDisconnected()
-        {
-            Leave(true);
+
+        public void OnDisconnected() {
+            this.Leave(true);
         }
 
-        public void Leave(bool teleportToSpawn)
-        {
-            if (!Fight.Started)
-            {
-                Team.RemoveFighter(this);
+        public void Leave(bool teleportToSpawn) {
+            if (!this.Fight.Started) {
+                this.Team.RemoveFighter(this);
 
-                if (OnLeavePreFightEvt != null)
-                    OnLeavePreFightEvt();
+                this.OnLeavePreFightEvt?.Invoke();
 
 
-                if (!Fight.CheckFightEnd())
-                {
-                    Fight.CheckFightStart();
+                if (!this.Fight.CheckFightEnd()) {
+                    this.Fight.CheckFightStart();
                 }
 
-                if (teleportToSpawn)
-                    Character.RejoinMap(Fight.FightType, false, Fight.SpawnJoin);
-                else
-                    Character.RejoinMap(Fight.FightType, false, false);
-
+                this.Character.RejoinMap(this.Fight.FightType, false, teleportToSpawn && this.Fight.SpawnJoin, this.Stats);
             }
-            else
-            {
-
-                if (!Left)
-                {
-                    if (Alive)
-                    {
+            else {
+                if (!this.Left) {
+                    if (this.Alive) {
                         this.Stats.CurrentLifePoints = 0;
                         this.Fight.CheckDeads();
                     }
-                    if (!Fight.Ended)
-                    {
-                        Synchronizer sync = new Synchronizer(this.Fight, new PlayableFighter[]
-                    {
-                        this
-                    });
-                        sync.Success += delegate (Synchronizer obj)
-                        {
-                            this.OnPlayerReadyToLeave();
-                        };
-                        sync.Timeout += delegate (Synchronizer obj, PlayableFighter[] laggers)
-                        {
-                            this.OnPlayerReadyToLeave();
-                        };
+
+                    if (!this.Fight.Ended) {
+                        Synchronizer sync = new Synchronizer(this.Fight,
+                                                             new PlayableFighter[] {
+                                                                 this
+                                                             });
+                        sync.Success += delegate { this.OnPlayerReadyToLeave(); };
+                        sync.Timeout += delegate { this.OnPlayerReadyToLeave(); };
                         this.PersonalSynchronizer = sync;
                         sync.Start();
                     }
@@ -204,82 +136,79 @@ namespace Symbioz.World.Models.Fights.Fighters
                 }
             }
         }
-        public void ToggleSyncReady(bool isReady)
-        {
-            if (this.PersonalSynchronizer != null)
-            {
+
+        public void ToggleSyncReady(bool isReady) {
+            if (this.PersonalSynchronizer != null) {
                 this.PersonalSynchronizer.ToggleReady(this, isReady);
             }
-            else
-            {
-                if (base.Fight.Synchronizer != null)
-                {
-                    base.Fight.Synchronizer.ToggleReady(this, isReady);
-                }
+            else {
+                this.Fight.Synchronizer?.ToggleReady(this, isReady);
             }
         }
-        public override void Kick()
-        {
-            Leave(false);
-        }
-        public void ShowPlacementCells()
-        {
-            this.Send(new GameFightPlacementPossiblePositionsMessage(Fight.RedTeam.GetPlacements(), Fight.BlueTeam.GetPlacements(), Team.Id));
+
+        public override void Kick() {
+            this.Leave(false);
         }
 
-        public override GameFightFighterInformations GetFightFighterInformations()
-        {
-            return new GameFightCharacterInformations(Id, Look.ToEntityLook(), new EntityDispositionInformations((short)CellId,
-                (sbyte)Direction), Team.Id, 0, Alive, Stats.GetFightMinimalStats(), new ushort[0], Character.Name, Character.GetPlayerStatus(),
-                (byte)Character.Level, Character.Record.Alignment.GetActorAlignmentInformations(),
-                Character.Record.BreedId, Character.Record.Sex);
+        public void ShowPlacementCells() {
+            this.Send(new GameFightPlacementPossiblePositionsMessage(this.Fight.RedTeam.GetPlacements(), this.Fight.BlueTeam.GetPlacements(), this.Team.Id));
+        }
+
+        public override GameFightFighterInformations GetFightFighterInformations() {
+            return new GameFightCharacterInformations(this.Id,
+                                                      this.Look.ToEntityLook(),
+                                                      new EntityDispositionInformations(this.CellId, (sbyte) this.Direction),
+                                                      this.Team.Id,
+                                                      0,
+                                                      this.Alive,
+                                                      this.Stats.GetFightMinimalStats(),
+                                                      new ushort[0],
+                                                      this.Character.Name,
+                                                      this.Character.GetPlayerStatus(),
+                                                      (byte) this.Character.Level,
+                                                      this.Character.Record.Alignment.GetActorAlignmentInformations(),
+                                                      this.Character.Record.BreedId,
+                                                      this.Character.Record.Sex);
         }
 
 
-        public override void AddCooldownOnSpell(Fighter source, ushort spellId, short value)
-        {
+        public override void AddCooldownOnSpell(Fighter source, ushort spellId, short value) {
             base.AddCooldownOnSpell(source, spellId, value);
-            this.Character.Client.Send(new GameActionFightSpellCooldownVariationMessage((ushort)ActionsEnum.ACTION_CHARACTER_ADD_SPELL_COOLDOWN,
-                        source.Id, Id, spellId, value));
+            this.Character.Client.Send(new GameActionFightSpellCooldownVariationMessage((ushort) ActionsEnum.ACTION_CHARACTER_ADD_SPELL_COOLDOWN,
+                                                                                        source.Id,
+                                                                                        this.Id,
+                                                                                        spellId,
+                                                                                        value));
         }
-        public override bool CastSpell(SpellRecord spell, sbyte grade, short cellId, int targetId = 0, bool verif = true)
-        {
-            if (spell.Id == WeaponManager.PunchSpellId)
-            {
-                MapPoint castPoint = new MapPoint(cellId);
 
-                if (HasWeaponEquiped)
-                {
-                    string rawZone = WeaponManager.Instance.GetRawZone(WeaponTemplate.TypeEnum);
-
-                    return CloseCombat(WeaponLevel, castPoint, rawZone, WeaponTemplate.Id);
-
-                }
-                else
-                {
-                    SpellLevelRecord level = GetSpell(WeaponManager.PunchSpellId).Template.GetLastLevel();
-                    return CloseCombat(level, castPoint, WeaponManager.PunchRawZone);
-                }
-            }
-            else
-            {
+        public override bool CastSpell(SpellRecord spell, sbyte grade, short cellId, int targetId = 0, bool verif = true) {
+            if (spell.Id != WeaponManager.PunchSpellId) 
                 return base.CastSpell(spell, grade, cellId, targetId, verif);
-            }
-        }
-        private bool CloseCombat(SpellLevelRecord level, MapPoint castPoint, string rawZone, ushort weaponGId = 0)
-        {
-            SpellCastResultEnum canCast = CanCastSpell(level,CellId,castPoint.CellId);
+            
+            MapPoint castPoint = new MapPoint(cellId);
 
-            if (canCast != SpellCastResultEnum.Ok)
-            {
-                OnSpellCastFailed(canCast, level);
+            if (this.HasWeaponEquiped) {
+                string rawZone = WeaponManager.Instance.GetRawZone(this.WeaponTemplate.Template.TypeEnum);
+
+                return this.CloseCombat(this.WeaponLevel, castPoint, rawZone, this.WeaponTemplate.Id);
+            }
+
+            SpellLevelRecord level = this.GetSpell(WeaponManager.PunchSpellId).Template.GetLastLevel();
+            return this.CloseCombat(level, castPoint, WeaponManager.PunchRawZone);
+
+        }
+
+        private bool CloseCombat(SpellLevelRecord level, MapPoint castPoint, string rawZone, ushort weaponGId = 0) {
+            SpellCastResultEnum canCast = this.CanCastSpell(level, this.CellId, castPoint.CellId);
+
+            if (canCast != SpellCastResultEnum.Ok) {
+                this.OnSpellCastFailed(canCast, level);
                 return false;
             }
 
-            if (OnWeaponUsedEvt != null)
-                OnWeaponUsedEvt(this);
+            this.OnWeaponUsedEvt?.Invoke(this);
 
-            Fight.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_WEAPON);
+            this.Fight.SequencesManager.StartSequence(SequenceTypeEnum.SEQUENCE_WEAPON);
 
             FightSpellCastCriticalEnum fightSpellCastCriticalEnum = this.RollCriticalDice(level);
             bool criticalHit = fightSpellCastCriticalEnum == FightSpellCastCriticalEnum.CRITICAL_HIT;
@@ -287,31 +216,38 @@ namespace Symbioz.World.Models.Fights.Fighters
             EffectInstance[] effects = (criticalHit ? level.CriticalEffects : level.Effects).ToArray();
 
 
+            this.Fight.Send(new GameActionFightCloseCombatMessage((ushort) ActionsEnum.ACTION_FIGHT_CLOSE_COMBAT,
+                                                                  this.Id,
+                                                                  false,
+                                                                  false,
+                                                                  0,
+                                                                  castPoint.CellId,
+                                                                  (sbyte) fightSpellCastCriticalEnum,
+                                                                  weaponGId));
 
-            Fight.Send(new GameActionFightCloseCombatMessage((ushort)ActionsEnum.ACTION_FIGHT_CLOSE_COMBAT,
-           Id, false, false, 0, castPoint.CellId, (sbyte)fightSpellCastCriticalEnum, weaponGId));
-
-            SpellEffectsManager.Instance.HandleEffects(this, effects, level, castPoint, rawZone,
-                WeaponManager.WeaponTargetMask, criticalHit);
-
+            SpellEffectsManager.Instance.HandleEffects(this,
+                                                       effects,
+                                                       level,
+                                                       castPoint,
+                                                       rawZone,
+                                                       WeaponManager.WeaponTargetMask,
+                                                       criticalHit);
 
 
             this.UseAp(level.ApCost);
 
-            this.OnSpellCasted(level, CellId, fightSpellCastCriticalEnum);
-            Fight.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_WEAPON);
-            Fight.CheckDeads();
-            Fight.CheckFightEnd();
+            this.OnSpellCasted(level, this.CellId, fightSpellCastCriticalEnum);
+            this.Fight.SequencesManager.EndSequence(SequenceTypeEnum.SEQUENCE_WEAPON);
+            this.Fight.CheckDeads();
+            this.Fight.CheckFightEnd();
             return true;
         }
 
-        public override FightTeamMemberInformations GetFightTeamMemberInformations()
-        {
-            return new FightTeamMemberCharacterInformations((double)Id, Character.Name, (byte)Character.Level);
+        public override FightTeamMemberInformations GetFightTeamMemberInformation() {
+            return new FightTeamMemberCharacterInformations(this.Id, this.Character.Name, (byte) this.Character.Level);
         }
 
-        public void OnPlayerReadyToLeave()
-        {
+        public void OnPlayerReadyToLeave() {
             this.PersonalSynchronizer = null;
 
             if (this.Fight != null && !this.Fight.CheckFightEnd()) // ??? Fight != null.??
@@ -319,33 +255,30 @@ namespace Symbioz.World.Models.Fights.Fighters
                 this.Team.RemoveFighter(this);
                 this.Team.AddLeaver(this);
 
-                if (IsFighterTurn)
-                {
+                if (this.IsFighterTurn) {
                     this.Fight.StopTurn();
                 }
 
                 //  fighter.ResetFightProperties();
-                this.Character.RejoinMap(Fight.FightType, false, Fight.SpawnJoin);
+                this.Character.RejoinMap(this.Fight.FightType, false, this.Fight.SpawnJoin, this.Stats);
             }
         }
-        public override CharacterSpell GetSpell(ushort spellId)
-        {
-            return Character.GetSpell(spellId);
+
+        public override CharacterSpell GetSpell(ushort spellId) {
+            return this.Character.GetSpell(spellId);
         }
-        public override IFightResult GetFightResult()
-        {
-            return new FightPlayerResult(this, base.GetFighterOutcome(), base.Loot);
+
+        public override IFightResult GetFightResult() {
+            return new FightPlayerResult(this, this.GetFighterOutcome(), this.Loot);
         }
 
 
-
-        public override void Send(Message message)
-        {
-            Character.Client.Send(message);
+        public override void Send(Message message) {
+            this.Character.Client.Send(message);
         }
-        public override Character GetCharacterPlaying()
-        {
-            return Character;
+
+        public override Character GetCharacterPlaying() {
+            return this.Character;
         }
     }
 }

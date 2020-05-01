@@ -89,7 +89,7 @@ namespace Symbioz.World.Models.Fights.Fighters
                 Name, Owner.Character.GetPlayerStatus(), (byte)Level, Owner.Character.Record.Alignment.GetActorAlignmentInformations(), Owner.Character.Breed.Id, Owner.Sex);
         }
 
-        public override FightTeamMemberInformations GetFightTeamMemberInformations()
+        public override FightTeamMemberInformations GetFightTeamMemberInformation()
         {
             throw new NotImplementedException();
         }

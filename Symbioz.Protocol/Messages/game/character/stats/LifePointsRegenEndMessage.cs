@@ -18,7 +18,7 @@ namespace Symbioz.Protocol.Messages {
 
         public LifePointsRegenEndMessage() { }
 
-        public LifePointsRegenEndMessage(uint lifePoints, uint maxLifePoints, uint lifePointsGained)
+        public LifePointsRegenEndMessage(uint lifePoints, uint maxLifePoints, uint lifePointsGained = 0)
             : base(lifePoints, maxLifePoints) {
             this.lifePointsGained = lifePointsGained;
         }

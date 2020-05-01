@@ -35,6 +35,15 @@ namespace Symbioz.World.Records.Npcs
             this.Value1 = value1;
             this.Value2 = value2;
         }
+
+        public NpcActionRecord(long npcid, sbyte actionid, string value1, string value2)
+        {
+            this.NpcId = npcid;
+            this.ActionId = actionid;
+            this.Value1 = value1;
+            this.Value2 = value2;
+        }
+        
         public static List<NpcActionRecord> GetActions(long npcid)
         {
             return NpcsActions.FindAll(x => x.NpcId == npcid);

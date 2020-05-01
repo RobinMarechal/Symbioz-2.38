@@ -12,7 +12,7 @@ namespace Symbioz.World.Records.Npcs
     {
         public static List<NpcReplyRecord> NpcsReplies = new List<NpcReplyRecord>();
 
-        public ulong _id;
+        public ulong _Id;
 
         public ushort MessageId;
 
@@ -29,8 +29,18 @@ namespace Symbioz.World.Records.Npcs
 
         public string ConditionExplanation;
 
-        public NpcReplyRecord(ulong _id, ushort messageid,ushort replyid, string actiontype, string value1, string value2, string condition, string conditionexplanation)
-        {
+        public NpcReplyRecord(ulong _id, ushort messageid,ushort replyid, string actiontype, string value1, string value2, string condition, string conditionexplanation) {
+            this._Id = _id;
+            this.MessageId = messageid;
+            this.ReplyId = replyid;
+            this.ActionType = actiontype;
+            this.Value1 = value1;
+            this.Value2 = value2;
+            this.Condition = condition;
+            this.ConditionExplanation = conditionexplanation;
+        }
+
+        public NpcReplyRecord(ushort messageid,ushort replyid, string actiontype, string value1, string value2, string condition, string conditionexplanation) {
             this.MessageId = messageid;
             this.ReplyId = replyid;
             this.ActionType = actiontype;

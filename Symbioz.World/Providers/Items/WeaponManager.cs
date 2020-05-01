@@ -128,8 +128,8 @@ namespace Symbioz.World.Providers.Items
         }
         public SpellLevelRecord GetWeaponSpellLevel(WeaponRecord weapon)
         {
-            List<EffectInstance> effects = SelectWeaponEffects(weapon.Effects);
-            List<EffectInstance> criticalEffects = GetCriticalEffects(weapon, SelectWeaponEffects(weapon.Effects));
+            List<EffectInstance> effects = SelectWeaponEffects(weapon.Template.Effects);
+            List<EffectInstance> criticalEffects = GetCriticalEffects(weapon, SelectWeaponEffects(weapon.Template.Effects));
             short maxCastPerTurn = GetMaxCastPerTurn(weapon.ApCost);
 
             return new SpellLevelRecord(-1, WeaponManager.PunchSpellId, 1, weapon.ApCost, weapon.MinRange,

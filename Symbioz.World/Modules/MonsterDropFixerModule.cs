@@ -17,7 +17,7 @@ namespace Symbioz.World.Modules {
         }
 
 
-        static void AddDrop(ushort monsterId, ushort itemId, int dropPercent) {
+        public static void AddDrop(ushort monsterId, ushort itemId, int dropPercent) {
             var monster = MonsterRecord.GetMonster(monsterId);
 
             var drop = new MonsterDrop() {

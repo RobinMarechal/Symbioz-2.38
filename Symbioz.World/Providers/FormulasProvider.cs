@@ -68,14 +68,14 @@ namespace Symbioz.World.Providers {
             return (uint) kamas;
         }
 
-        public double AdjustDropChance(IFightResult looter, MonsterDrop item, sbyte dropperGradeId, int monsterAgeBonus, int dropBonusPercent) {
+        public double AdjustDropChance(int teamPp, MonsterDrop item, sbyte dropperGradeId, int monsterAgeBonus, int dropBonusPercent) {
             dropBonusPercent = dropBonusPercent == 0 ? 1 : dropBonusPercent;
             var dropRate = item.GetDropRate(dropperGradeId);
-            var prospecting = (looter.Prospecting / 100.0);
-            int result = (int) (dropRate * prospecting * (monsterAgeBonus / 100.0 + 1.0) * WorldConfiguration.Instance.DropsRate);
+            var prospecting = teamPp / 100.0;
+            int result = (int) (dropRate * prospecting * (monsterAgeBonus / 100.0 + 1.0));
             result += result.GetPercentageOf(dropBonusPercent);
 
-            return result / 5d;
+            return result / 5d * WorldConfiguration.Instance.DropsRate;
         }
 
         public ulong GetPvMExperience(CharacterFighter fighter) {

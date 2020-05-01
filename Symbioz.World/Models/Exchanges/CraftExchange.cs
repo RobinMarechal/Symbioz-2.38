@@ -46,17 +46,18 @@ namespace Symbioz.World.Models.Exchanges
         {
             var recipe = RecipeRecord.GetRecipe(gid);
 
-            if (recipe != null && recipe.ResultLevel <= Character.GetJob(JobType).Level)
+            if (recipe != null && recipe.ResultLevel <= this.Character.GetJob(this.JobType).Level)
             {
                 foreach (var ingredient in recipe.Ingredients)
                 {
-                    CharacterItemRecord item = Character.Inventory.GetFirstItem(ingredient.Key, ingredient.Value);
+                    CharacterItemRecord item = this.Character.Inventory.GetFirstItem(ingredient.Key, ingredient.Value);
                     if (item != null)
                     {
-                        CraftedItems.AddItem(item, ingredient.Value);
+                        this.CraftedItems.AddItem(item, ingredient.Value);
                     }
                 }
-                SetCount(1);
+
+                this.SetCount(1);
             }
         }
 
@@ -67,9 +68,9 @@ namespace Symbioz.World.Models.Exchanges
 
             if (ready)
             {
-                var recipe = GetRecipe();
+                var recipe = this.GetRecipe();
 
-                if (recipe != null && recipe.ResultLevel <= CharacterJob.Level)
+                if (recipe != null && recipe.ResultLevel <= this.CharacterJob.Level)
                 {
                     var recipeResult = recipe.Result;
                     if (recipeResult == null) // Tables load ordering problem. Temporary solution?
@@ -77,13 +78,13 @@ namespace Symbioz.World.Models.Exchanges
                         recipeResult = ItemRecord.Items.Find(it => it.Id == recipe.ResultId);
                     }
 
-                    for (int i = 0; i < Count; i++)
+                    for (int i = 0; i < this.Count; i++)
                     {
-                        if (Character.IsInExchange(ExchangeTypeEnum.CRAFT))
+                        if (this.Character.IsInExchange(ExchangeTypeEnum.CRAFT))
                         {
-                            results.Add(recipeResult.GetCharacterItem(Character.Id, 1, false)); // True = jet parfait
+                            results.Add(recipeResult.GetCharacterItem(this.Character.Id, 1, false)); // True = jet parfait
 
-                            foreach (var ingredient in CraftedItems.GetItems())
+                            foreach (var ingredient in this.CraftedItems.GetItems())
                             {
                                 if (!removed.ContainsKey(ingredient.UId))
                                     removed.Add(ingredient.UId, ingredient.Quantity);
@@ -95,49 +96,49 @@ namespace Symbioz.World.Models.Exchanges
                             return;
                     }
 
-                    CraftedItems.Clear(false);
+                    this.CraftedItems.Clear(false);
 
-                    Character.Inventory.RemoveItems(removed);
-                    Character.Inventory.AddItems(results);
+                    this.Character.Inventory.RemoveItems(removed);
+                    this.Character.Inventory.AddItems(results);
 
-                    OnCraftResulted(CraftResultEnum.CRAFT_SUCCESS, results.Last());
+                    this.OnCraftResulted(CraftResultEnum.CRAFT_SUCCESS, results.Last());
 
-                    Character.SendMap(new ExchangeCraftInformationObjectMessage((sbyte)CraftResultEnum.CRAFT_SUCCESS, recipe.ResultId, (ulong)Character.Id));
+                    this.Character.SendMap(new ExchangeCraftInformationObjectMessage((sbyte)CraftResultEnum.CRAFT_SUCCESS, recipe.ResultId, (ulong) this.Character.Id));
 
                     int craftXpRatio = recipeResult.Weapon ? WeaponRecord.GetWeapon(recipe.ResultId).CraftXpRatio : -1;
-                    int exp = FormulasProvider.Instance.GetCraftXpByJobLevel(recipe.ResultLevel, CharacterJob.Level, craftXpRatio);
-                    Character.AddJobExp(JobType, (ulong)(exp * Count * WorldConfiguration.Instance.JobXpRate));
-                    SetCount(1);
+                    int exp = FormulasProvider.Instance.GetCraftXpByJobLevel(recipe.ResultLevel, this.CharacterJob.Level, craftXpRatio);
+                    this.Character.AddJobExp(this.JobType, (ulong)(exp * this.Count * WorldConfiguration.Instance.JobXpRate));
+                    this.SetCount(1);
                 }
                 else
                 {
-                    OnCraftResulted(CraftResultEnum.CRAFT_FAILED);
+                    this.OnCraftResulted(CraftResultEnum.CRAFT_FAILED);
                 }
             }
             else
             {
-                OnCraftResulted(CraftResultEnum.CRAFT_FAILED);
+                this.OnCraftResulted(CraftResultEnum.CRAFT_FAILED);
             }
         }
         private RecipeRecord GetRecipe()
         {
             Dictionary<ushort, uint> ingredients = new Dictionary<ushort, uint>();
 
-            foreach (var item in CraftedItems.GetItems())
+            foreach (var item in this.CraftedItems.GetItems())
             {
                 if (!ingredients.ContainsKey(item.GId))
                     ingredients.Add(item.GId, item.Quantity);
             }
 
-            var template = RecipeRecord.Recipes.Find(x => x.Ingredients.ScramEqualDictionary(ingredients) && x.SkillId == SkillId);
+            var template = RecipeRecord.Recipes.Find(x => x.Ingredients.ScramEqualDictionary(ingredients) && x.SkillId == this.SkillId);
             return template;
         }
         private void OnCraftResulted(CraftResultEnum result, CharacterItemRecord item = null)
         {
             if (item != null)
-                Character.Client.Send(new ExchangeCraftResultWithObjectDescMessage((sbyte)result, item.Template.GetObjectItemNotInContainer(item.UId, (uint)Count)));
+                this.Character.Client.Send(new ExchangeCraftResultWithObjectDescMessage((sbyte)result, item.Template.GetObjectItemNotInContainer(item.UId, (uint) this.Count)));
             else
-                Character.Client.Send(new ExchangeCraftResultMessage((sbyte)result));
+                this.Character.Client.Send(new ExchangeCraftResultMessage((sbyte)result));
         }
         public override void SetCount(int count)
         {
@@ -145,7 +146,7 @@ namespace Symbioz.World.Models.Exchanges
                 count = 1;
 
             this.Count = count;
-            Character.Client.Send(new ExchangeCraftCountModifiedMessage(count));
+            this.Character.Client.Send(new ExchangeCraftCountModifiedMessage(count));
         }
         public override void MoveKamas(int quantity)
         {

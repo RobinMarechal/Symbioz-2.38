@@ -26,7 +26,7 @@ namespace Symbioz.World.Handlers.Approach {
     class CharacterHandler {
         static Logger logger = new Logger();
 
-        public static char[] UnauthorizedNameContent = new char[] {'(', ')', '[', '{', '}', ']', '\'', ':', '<', '>', '?', '!'};
+        public static char[] UnauthorizedNameContent = new char[] { '(', ')', '[', '{', '}', ']', '\'', ':', '<', '>', '?', '!' };
 
         [MessageHandler]
         public static void HandleCharacterList(CharactersListRequestMessage message, WorldClient client) {
@@ -147,7 +147,7 @@ namespace Symbioz.World.Handlers.Approach {
         }
 
         static void ProcessSelection(WorldClient client) {
-            client.Send(new NotificationListMessage(new int[] {2147483647}));
+            client.Send(new NotificationListMessage(new int[] { 2147483647 }));
             client.Send(new CharacterSelectedSuccessMessage(client.Character.Record.GetCharacterBaseInformations(),
                                                             false));
             client.Send(new CharacterCapabilitiesMessage(4095));
@@ -162,7 +162,7 @@ namespace Symbioz.World.Handlers.Approach {
             client.Character.RefreshArenaInfos();
             client.Character.OnConnected();
             client.Character.RefreshGuild();
-            client.Send(new EnabledChannelsMessage(new sbyte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13},
+            client.Send(new EnabledChannelsMessage(new sbyte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13 },
                                                    new sbyte[0]));
             client.Character.SafeConnection();
 
@@ -208,6 +208,18 @@ namespace Symbioz.World.Handlers.Approach {
                 client.Character = new Character(client, record, false);
                 ProcessSelection(client);
             }
+        }
+
+
+        [MessageHandler]
+        public static void HandleLifePointsRegenBegin(LifePointsRegenBeginMessage message, WorldClient client) {
+            client.Character.Reply("Regen begin...");
+        }
+
+
+        [MessageHandler]
+        public static void HandleLifePointsRegenEnd(LifePointsRegenEndMessage message, WorldClient client) {
+            client.Character.Reply("Regen End...");
         }
     }
 }

@@ -119,7 +119,7 @@ namespace Symbioz.World.Records.Characters
 
         public bool CanBeExchanged()
         {
-            return !IsValidMountCertificate;
+            return !IsAssociated;
         }
 
         /// <summary>

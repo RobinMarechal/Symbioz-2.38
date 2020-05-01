@@ -54,6 +54,15 @@ namespace Symbioz.World.Records.Npcs
             this.CellId = cellId;
             this.Direction = direction;
         }
+        public NpcSpawnRecord(ushort templateId, int mapId, ushort cellId, sbyte direction)
+        {
+            this.TemplateId = templateId;
+            this.Template = NpcRecord.GetNpc(templateId);
+            this.MapId = mapId;
+            this.CellId = cellId;
+            this.Direction = direction;
+        }
+        
         public static List<NpcSpawnRecord> GetMapNpcs(int mapId)
         {
             return NpcsSpawns.FindAll(x => x.MapId == mapId);
@@ -67,6 +76,10 @@ namespace Symbioz.World.Records.Npcs
         public static NpcSpawnRecord GetSpawn(int id)
         {
             return NpcsSpawns.FirstOrDefault(x => x.Id == id);
+        }
+
+        public static int GetNextId() {
+            return NpcsSpawns.ConvertAll(r => r.Id).Max() + 1;
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Timers;
 using Symbioz.Core;
 using Symbioz.Protocol.Enums;
 using Symbioz.Protocol.Messages;
@@ -15,6 +16,7 @@ using Symbioz.World.Models.Entities.HumanOptions;
 using Symbioz.World.Models.Entities.Jobs;
 using Symbioz.World.Models.Entities.Look;
 using Symbioz.World.Models.Entities.Shortcuts;
+using Symbioz.World.Models.Entities.Stats;
 using Symbioz.World.Models.Exchanges;
 using Symbioz.World.Models.Fights.Fighters;
 using Symbioz.World.Models.Fights.FightModels;
@@ -104,6 +106,8 @@ namespace Symbioz.World.Models.Entities {
         public RequestBox RequestBox { get; set; }
         public ushort[] SkillsAllowed { get; private set; }
 
+        private Timer HealthRegenerationTimer = null;
+
         private CharacterHumanOptionOrnament ActiveOrnament {
             get { return this.GetFirstHumanOption<CharacterHumanOptionOrnament>(); }
         }
@@ -161,12 +165,14 @@ namespace Symbioz.World.Models.Entities {
         public PlayableFighter CreateFighter(FightTeam team) {
             if (this.Look.RemoveAura()) this.RefreshActorOnMap();
 
+            this.StopHealthRegeneration();
+
             this.MovementKeys = null;
             this.IsMoving = false;
             this.Map.Instance.RemoveEntity(this);
             this.DestroyContext();
             this.CreateContext(GameContextEnum.FIGHT);
-            this.RefreshStats();
+            // this.RefreshStats();
             this.Client.Send(new GameFightStartingMessage((sbyte) team.Fight.FightType, team.Fight.BlueTeam.Id, team.Fight.RedTeam.Id));
             this.FighterMaster = new CharacterFighter(this, team, this.CellId);
             this.Fighter = this.FighterMaster;
@@ -489,6 +495,7 @@ namespace Symbioz.World.Models.Entities {
             }
 
             if (send) {
+                this.Record.Stats.LifePoints = this.Record.Stats.MaxLifePoints;
                 this.RefreshActorOnMap();
                 this.RefreshStats();
             }
@@ -552,6 +559,15 @@ namespace Symbioz.World.Models.Entities {
             if (isNew) {
                 this.OnLevelChanged(1, this.Level - 1, false);
             }
+            
+            this.BeginHealthRegeneration();
+            
+            this.Client.Send(new LifePointsRegenEndMessage((uint) this.Record.Stats.LifePoints, (uint) this.Record.Stats.MaxLifePoints));
+            this.Client.Send(new LifePointsRegenBeginMessage((byte) (WorldConfiguration.Instance.HealthRegenPerSecond*10)));
+        }
+
+        public void Deconstruct() {
+            this.StopHealthRegeneration();
         }
 
         public void RefreshActorOnMap() {
@@ -1010,7 +1026,8 @@ namespace Symbioz.World.Models.Entities {
                 this.Record.MapId = mapId;
             }
             else {
-                this.Client.Character.ReplyError("The map dosent exist...");
+                this.Client.Character.ReplyError("The map does not exist...");
+                this.ChangeMap = false;
             }
         }
 
@@ -1517,13 +1534,13 @@ namespace Symbioz.World.Models.Entities {
                                                                                                    false)));
         }
 
-        public void RejoinMap(FightTypeEnum fightType, bool winner, bool spawnJoin) {
+        public void RejoinMap(FightTypeEnum fightType, bool winner, bool spawnJoin, FighterStats stats) {
             this.DestroyContext();
             this.CreateContext(GameContextEnum.ROLE_PLAY);
             this.RefreshStats();
             this.Fighter = null;
             this.FighterMaster = null;
-            if (spawnJoin && !winner && this.Client.Account.Role != ServerRoleEnum.Fondator) {
+            if (spawnJoin && !winner /*&& this.Client.Account.Role != ServerRoleEnum.Fondator*/) {
                 this.SpawnPoint(true);
             }
             else {
@@ -1579,6 +1596,35 @@ namespace Symbioz.World.Models.Entities {
 
         public void OnMinationLevelUp(EffectMination minationEffect, ushort newLevel) {
             this.OpenPopup(0, "Félicitation", "Votre Pokéfus " + minationEffect.MonsterName + " vient de passer niveau " + newLevel + "!");
+        }
+
+        public void BeginHealthRegeneration() {
+            byte regenPerSecond = WorldConfiguration.Instance.HealthRegenPerSecond;
+            int intervalMs = 1000/regenPerSecond;
+            
+            this.StopHealthRegeneration();
+
+            this.HealthRegenerationTimer = new Timer(intervalMs);
+            this.HealthRegenerationTimer.Elapsed += (sender, args) => this.RegenAction();
+            this.HealthRegenerationTimer.Start();
+        }
+
+        public void StopHealthRegeneration() {
+            if (this.HealthRegenerationTimer != null) {
+                this.HealthRegenerationTimer?.Dispose();
+                this.HealthRegenerationTimer = null;
+                // this.Reply($"Stopping regen");
+            }
+        }
+        
+        private void RegenAction() {
+            this.Record.Stats.LifePoints++;
+            this.RefreshStats();
+            // this.Reply($"Hp: {this.Record.Stats.LifePoints}");
+
+            if (this.Record.Stats.LifePoints >= this.Record.Stats.MaxLifePoints) {
+                this.StopHealthRegeneration();
+            }
         }
     }
 }

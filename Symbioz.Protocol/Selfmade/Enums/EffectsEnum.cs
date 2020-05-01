@@ -45,7 +45,7 @@ namespace Symbioz.Protocol.Selfmade.Enums {
         Effect_AddDamageReflection,
         Effect_HealHP_108,
         Effect_109,
-        Effect_AddHealth,
+        Effect_AddHealth = 110,
         Effect_AddAP_111,
         Effect_AddDamageBonus,
         Effect_DoubleDamageOrRestoreHP,
