@@ -10,6 +10,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Symbioz.Protocol.Selfmade.Messages;
+using Symbioz.World.Models.Items;
+using Symbioz.World.Records.Characters;
+using Symbioz.World.Records.Items;
 
 namespace Symbioz.World.Handlers.RolePlay.Exchanges {
     public class ExchangesHandler {
@@ -73,6 +77,66 @@ namespace Symbioz.World.Handlers.RolePlay.Exchanges {
         public static void HandleExchangeObjectMove(ExchangeObjectMoveMessage message, WorldClient client) {
             client.Character.GetDialog<Exchange>().MoveItem(message.objectUID, message.quantity);
         }
+
+        #region TradeExchanges
+
+        [MessageHandler]
+        public static void HandleExchangeObjectTransfertListFromInv(ExchangeObjectTransfertListFromInvMessage message, WorldClient client) {
+            AbstractTradeExchange dialog = client.Character.GetDialog<AbstractTradeExchange>();
+            foreach (uint itemId in message.ids) {
+                uint quantity = client.Character.Inventory.GetItem(itemId).Quantity;
+                dialog.MoveItem(itemId, (int) quantity);
+            }
+        }
+
+        [MessageHandler]
+        public static void HandleExchangeObjectTransfertAllFromInv(ExchangeObjectTransfertAllFromInvMessage message, WorldClient client) {
+            AbstractTradeExchange dialog = client.Character.GetDialog<AbstractTradeExchange>();
+            foreach (CharacterItemRecord item in client.Character.Inventory.GetItems()) {
+                dialog.MoveItem(item.UId, (int) item.Quantity);
+            }
+        }
+
+        [MessageHandler]
+        public static void HandleExchangeObjectTransfertExistingFromInv(ExchangeObjectTransfertExistingFromInvMessage message, WorldClient client) {
+            AbstractTradeExchange dialog = client.Character.GetDialog<AbstractTradeExchange>();
+            Models.Entities.Inventory characterInventory = client.Character.Inventory;
+            IEnumerable<ItemStack> transferableItems = from item in dialog.GetAllPresentItems()
+                                                       let characterItemRecord = characterInventory.GetItem(item.ItemUId)
+                                                       where characterItemRecord != null && item.Quantity > 0
+                                                       select item;
+            foreach (ItemStack item in transferableItems) {
+                dialog.MoveItem(item.ItemUId, (int) item.Quantity);
+            }
+        }
+
+        [MessageHandler]
+        public static void HandleExchangeObjectTransfertAllToInv(ExchangeObjectTransfertAllToInvMessage message, WorldClient client) {
+            client.Character.GetDialog<AbstractTradeExchange>().RemoveAllItems();
+        }
+
+        [MessageHandler]
+        public static void HandleExchangeObjectTransfertExistingToInv(ExchangeObjectTransfertExistingToInvMessage message, WorldClient client) {
+            AbstractTradeExchange dialog = client.Character.GetDialog<AbstractTradeExchange>();
+            IEnumerable<ItemStack> allPresentItems = dialog.GetAllPresentItems();
+            List<uint> characterItems = client.Character.Inventory.GetItems().ToList().ConvertAll(x => x.UId);
+            foreach (ItemStack itemStack in allPresentItems) {
+                if (characterItems.Contains(itemStack.ItemUId)) {
+                    dialog.MoveItem(itemStack.ItemUId, -1 * (int) itemStack.Quantity);
+                }
+            }
+        }
+
+        [MessageHandler]
+        public static void HandleExchangeObjectTransfertListToInv(ExchangeObjectTransfertListToInvMessage message, WorldClient client) {
+            AbstractTradeExchange dialog = client.Character.GetDialog<AbstractTradeExchange>();
+            IEnumerable<ItemStack> allPresentItems = dialog.GetAllPresentItems().Where(x => message.ids.Contains(x.ItemUId));
+            foreach (ItemStack itemStack in allPresentItems) {
+                dialog.MoveItem(itemStack.ItemUId, -1 * (int) itemStack.Quantity);
+            }
+        }
+
+        #endregion ezfz
 
         [MessageHandler]
         public static void HandleExchangeReady(ExchangeReadyMessage message, WorldClient client) {

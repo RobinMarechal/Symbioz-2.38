@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.Remoting.Channels;
+using Symbioz.Core;
 using Symbioz.Protocol.Messages;
 using Symbioz.Protocol.Selfmade.Enums;
+using Symbioz.Protocol.Types;
 using Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives.Navigation;
 using Symbioz.World.Handlers.RolePlay.Commands.Utils;
 using Symbioz.World.Network;
 using Symbioz.World.Records.Interactives;
+using Symbioz.World.Records.Maps;
 
 namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
     public class ElementsCmdBroker {
@@ -34,6 +38,8 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
                     case "mw": AddMineWay(client, split); break; // alias
                     case "jobcollects": ShowCollectiblesList(client, split); break;
                     case "jc": ShowCollectiblesList(client, split); break;
+                    case "addall": AddAllInteractivesOfGfx(client, split); break;
+                    case "aa": AddAllInteractivesOfGfx(client, split); break;
                     default: ShowHelp(client); break;
                 }
                 // @formatter:on
@@ -60,7 +66,7 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
             }
 
             if (elements.Length > colors.Length) {
-                client.Character.ReplyError($"WARNING: This command cannot display more than {colors.Length} elements...");
+                client.Character.ReplyError($"WARNING: This command will display more elements ({elements.Length}) while there are {colors.Length} different colors.. Be careful.");
             }
 
             client.Send(new DebugClearHighlightCellsMessage());
@@ -138,13 +144,25 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
             int elementId = int.Parse(args[1]);
             ushort skillId = ushort.Parse(args[2]);
             string actionType = args[3];
-            string value1 = args.Length > 3 ? args[3] : "";
-            string value2 = args.Length > 4 ? args[4] : "";
+            string value1 = args.Length > 4 ? args[4] : "";
+            string value2 = args.Length > 5 ? args[5] : "";
 
             CreateElement(client, elementId, skillId, actionType, value1, value2);
         }
 
         public static void AddMineWay(WorldClient client, string[] args) {
+            if (args.Length < 2) {
+                if (args.Length != 1) {
+                    client.Character.ReplyError("Invalid command.");
+                }
+
+                client.Character.Reply("Add a mine way.");
+                client.Character.Reply("» .elements|el mineway|mw $ElementId");
+                client.Character.Reply(" - <b>$ElementId</b> ⇒ The element id (see .elements).");
+
+                return;
+            }
+            
             int elementId = int.Parse(args[1]); // [0] = command name
             int spawnCellId = client.Character.CellId;
             int elementType = 282;
@@ -187,7 +205,7 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
             List<ushort> interactives = SkillRecord.Skills
                                                    .FindAll(s => s.ParentJobId == jobId && s.Name == "Collecter")
                                                    .ConvertAll(skill => skill.InteractiveId);
-            
+
             interactives.Sort();
 
             client.Character.Reply($"Collectible resources for job {jobId} ({interactives.Count}): ");
@@ -195,6 +213,80 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
                 var interactiveRecord = InteractiveRecord.GetInteractive(resourceId);
                 client.Character.Reply($" - {interactiveRecord.Name}: {interactiveRecord.Id}");
             }
+        }
+
+        private static void AddAllInteractivesOfGfx(WorldClient client, string[] args) {
+            if (args.Length < 4) {
+                if (args.Length != 1) {
+                    client.Character.ReplyError("Invalid command.");
+                }
+
+                client.Character.Reply("Add an all interactive elements of specific GfxLookId.");
+                client.Character.Reply("» .elements addall|aa $GfxLookId $ElementType $SkillId");
+                client.Character.Reply("» Example: .elements addall 685 108 154  ");
+                client.Character.Reply(" - <b>$GfxLookId</b> ⇒ The element GxfLookId (see <i>.elements show</i>)");
+                client.Character.Reply(" - <b>$ElementType</b> ⇒ ElementType (id in interactives table) of the resource.");
+                client.Character.Reply(" - <b>$SkillId</b> ⇒ The ID of the skill.");
+
+                return;
+            }
+            
+            int gfxLookId = int.Parse(args[1]);
+            int elementType = int.Parse(args[2]);
+            ushort skillId = ushort.Parse(args[3]);
+
+            const string actionType = "Collect";
+
+            int nextUid = InteractiveSkillRecord.InteractiveSkills.DynamicPop(x => x.UID);
+
+            client.Character.Reply($"Retrieving element records with GfxLookId={gfxLookId}...");
+            List<InteractiveElementRecord> elementRecords = InteractiveElementRecord.GetElementByGfxLookId(gfxLookId);
+
+            int counter = 1;
+            int total = elementRecords.Count;
+            HashSet<int> impactedMapIds = new HashSet<int>();
+
+            client.Character.Reply($"Updating {elementRecords.Count} element records...");
+            foreach (InteractiveElementRecord record in elementRecords) {
+                // Update InteractiveElement
+                if(record.ElementType != elementType){
+                    record.ElementType = elementType;
+                    record.UpdateInstantElement();
+                }
+                
+                client.Character.Reply($"Updated {counter}/{total} InteractiveElement.");
+
+                // Insert InteractiveSkill if not exists
+                if (!InteractiveSkillRecord.InteractiveSkills.Exists(isk => isk.ElementId == record.ElementId && isk.SkillId == skillId && isk.ActionType.Equals(actionType))) {
+                    InteractiveSkillRecord newRecord = new InteractiveSkillRecord(nextUid, actionType, "", "", record.ElementId, skillId);
+                    // InteractiveSkillRecord.InteractiveSkills.Add(newRecord);
+                    newRecord.AddInstantElement();
+                    nextUid++;
+                    
+                    client.Character.Reply($"Created {counter}/{total} InteractiveSKill.");
+                }
+                else {
+                    client.Character.Reply($"InteractiveSKill {counter}/{total} Already exists.");
+                }
+
+                impactedMapIds.Add(record.MapId);
+                counter++;
+            }
+
+            client.Character.Reply("Database updated.");
+
+            counter = 1;
+            total = impactedMapIds.Count;
+            client.Character.Reply($"Reloading {impactedMapIds.Count} maps...");
+            foreach (int mapId in impactedMapIds) {
+                MapRecord.GetMap(mapId).Instance.Reload();
+                client.Character.Reply($"Map {counter}/{total} reloaded: {mapId}");
+                counter++;
+            }
+
+            client.Character.Reply("All maps have been reloaded.");
+
+            client.Character.Reply("Done!");
         }
 
 
@@ -216,6 +308,7 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives {
             client.Character.Reply("» .elements addpaddock|ap ⇒ Add a paddock.");
             client.Character.Reply("» .elements mineway|mw ⇒ Add a mine way.");
             client.Character.Reply("» .elements jobcollects|jc ⇒ Show all collectable elements for a job.");
+            client.Character.Reply("» .elements addall|aa ⇒ Configure all interactive element instances for a GfxLookId.");
         }
     }
 }

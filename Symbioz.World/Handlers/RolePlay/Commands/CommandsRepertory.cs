@@ -9,6 +9,7 @@ using Symbioz.Protocol.Enums;
 using Symbioz.Protocol.Messages;
 using Symbioz.Protocol.Selfmade.Enums;
 using Symbioz.Protocol.Types;
+using Symbioz.World.Handlers.RolePlay.Commands.Brokers.Fights;
 using Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives;
 using Symbioz.World.Handlers.RolePlay.Commands.Brokers.Interactives.Navigation;
 using Symbioz.World.Handlers.RolePlay.Commands.Utils;
@@ -68,147 +69,7 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
             client.Character.Reply("Items for type: " + itemType + Environment.NewLine + itemIds.ToCSV());
         }
 
-
-        [ChatCommand("npcsinfo", ServerRoleEnum.Fondator)]
-        public static void GetNpcsInfo(string value, WorldClient client) {
-            var spawnRecords = NpcSpawnRecord.GetMapNpcs(client.Character.Map.Id);
-
-            client.Character.Reply("Npcs on map:");
-            foreach (NpcSpawnRecord spawnRecord in spawnRecords) {
-                client.Character.Reply($" - {spawnRecord.Template.Name}: Id={spawnRecord.TemplateId}, SpawnId={spawnRecord.Id}");
-            }
-        }
-
-        [ChatCommand("npcadd", ServerRoleEnum.Fondator)]
-        public static void NpcCommand(string value, WorldClient client) {
-            Character ch = client.Character;
-
-            var split = value.Trim().Split(' ');
-
-            ushort npcId = ushort.Parse(split[0]);
-            ushort cellId = split.Length > 1 ? ushort.Parse(split[1]) : ch.CellId;
-            MapRecord mapRecord = ch.Map;
-            sbyte recordDirection = ch.Record.Direction;
-
-            NpcSpawnRecord spawnRecord = NpcSpawnsManager.Instance.Spawn(npcId, mapRecord, cellId, recordDirection);
-
-            // spawnRecord.AddInstantElement();
-
-            client.Character.Map.Instance.Reload();
-            ch.Reply($"Spawned npc {spawnRecord.Template.Name} (NpcId={spawnRecord.Template.Id}, SpawnId={spawnRecord.Id})");
-        }
-
-
-        [ChatCommand("npcmsgs", ServerRoleEnum.Fondator)]
-        public static void NpcMessagesList(string value, WorldClient client) {
-            NpcRecord npcRecord = NpcRecord.GetNpc(ushort.Parse(value));
-            CSVDoubleArray messagesArray = npcRecord.Messages;
-            client.Character.Reply($"Messages for npc {npcRecord.Id} ({messagesArray.Values.Length}): ");
-            foreach (var tuple in messagesArray.Values) {
-                uint msgId = tuple[0];
-                client.Character.Reply($" - {msgId}");
-            }
-        }
-
-
-        [ChatCommand("npcreplies", ServerRoleEnum.Fondator)]
-        public static void NpcRepliesList(string value, WorldClient client) {
-            NpcRecord npcRecord = NpcRecord.GetNpc(ushort.Parse(value));
-            CSVDoubleArray messagesArray = npcRecord.Replies;
-            client.Character.Reply($"Replies for npc {npcRecord.Id} ({messagesArray.Values.Length}): ");
-            foreach (var tuple in messagesArray.Values) {
-                uint msgId = tuple[0];
-                client.Character.Reply($" - {msgId}");
-            }
-        }
-
-
-        [ChatCommand("npcaction", ServerRoleEnum.Fondator)]
-        public static void NpdAddAction(string value, WorldClient client) {
-            var split = value.Trim().Split(' ');
-
-            long spawnId = long.Parse(split[0]);
-            sbyte actionId = sbyte.Parse(split[1]); // Talk = 3
-            string value1 = split.Length > 2 ? split[2] : ""; // Talk ? MessageId
-            string value2 = split.Length > 3 ? split[3] : "";
-
-            NpcActionRecord npcAction = new NpcActionRecord(spawnId, actionId, value1, value2);
-            npcAction.AddInstantElement();
-
-            // TODO: test if previous statement is enough: YEP
-            //NpcActionRecord.NpcsActions.Add(npcAction);
-
-            Npc npc = client.Character.Map.Instance.GetNpc((int) spawnId);
-
-            // TODO: check if necessary: YEP
-            npc.ActionsRecord.Add(npcAction);
-
-            client.Character.Map.Instance.Reload();
-            client.Character.Reply($"Successfully added action {actionId} (Value1={value1}, Value2={value2}) to npc SpawnId={spawnId}.");
-        }
-
-
-        [ChatCommand("npcrmaction", ServerRoleEnum.Fondator)]
-        public static void NpdRemoveAction(string value, WorldClient client) {
-            var split = value.Trim().Split(' ');
-
-            long spawnId = long.Parse(split[0]);
-            sbyte actionId = sbyte.Parse(split[1]);
-
-            Npc npc = client.Character.Map.Instance.GetNpc((int) spawnId);
-
-            NpcActionRecord record = npc.ActionsRecord.Find(r => r.NpcId == spawnId && r.ActionId == actionId);
-            record.RemoveInstantElement();
-
-            // TODO: test if previous statement is enough: YEP
-            // NpcActionRecord.NpcsActions.Remove(record);
-            // TODO: check if necessary: YEP
-            npc.ActionsRecord.Remove(record);
-
-            client.Character.Map.Instance.Reload();
-            client.Character.Reply($"Successfully removed action {actionId} (Value1={record.Value1}) for npc SpawnId={spawnId}.");
-        }
-
-
-        [ChatCommand("npcreply", ServerRoleEnum.Fondator)]
-        public static void NpcAddReply(string value, WorldClient client) {
-            var split = value.Trim().Split(' ');
-
-            ushort messageId = ushort.Parse(split[0]);
-            ushort replyId = ushort.Parse(split[1]);
-            string actionType = split.Length > 2 ? split[2] : "";
-            string value1 = split.Length > 3 ? split[3] : "";
-            string value2 = split.Length > 4 ? split[4] : "";
-            string condition = split.Length > 5 ? split[5] : "";
-
-            NpcReplyRecord npcReply = new NpcReplyRecord(messageId, replyId, actionType, value1, value2, condition, "");
-            npcReply.AddInstantElement();
-
-            //NpcReplyRecord.NpcsReplies.Add(npcReply);
-
-            client.Character.Map.Instance.Reload();
-            client.Character.Reply($"Successfully added reply {replyId} to message {messageId} (ActionType={actionType}, Value1={value1}, Value2={value2}, Condition={condition}).");
-        }
-
-
-        [ChatCommand("npcrmreply", ServerRoleEnum.Fondator)]
-        public static void NpcRemoveReply(string value, WorldClient client) {
-            var split = value.Trim().Split(' ');
-
-            ushort messageId = ushort.Parse(split[0]);
-            ushort replyId = ushort.Parse(split[1]);
-
-            NpcReplyRecord record = NpcReplyRecord.NpcsReplies.Find(r => r.MessageId == messageId && r.ReplyId == replyId);
-            record.RemoveInstantElement();
-
-            // TODO: test if previous statement is enough YEP
-            NpcReplyRecord.NpcsReplies.Remove(record);
-
-            client.Character.Map.Instance.Reload();
-            client.Character.Reply($"Successfully removed reply {replyId} of message {messageId} (ActionType={record.ActionType}, Value1={record.Value1}, Value2={record.Value2}, Condition={record.Condition}).");
-        }
-
-
+        
         [ChatCommand("delayedact", ServerRoleEnum.Fondator)]
         public static void CreateDelayedAction(string value, WorldClient client) {
             var split = value.Split(' ');
@@ -590,7 +451,7 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
         }
 
 
-        [ChatCommand("restatCharacters", ServerRoleEnum.Fondator)]
+        [ChatCommand("restatall", ServerRoleEnum.Fondator)]
         public static void RestatCharacters(string value, WorldClient client) {
             foreach (CharacterRecord character in CharacterRecord.Characters) {
                 WorldClient connected = WorldServer.Instance.GetOnlineClient(character.Id);
@@ -602,6 +463,15 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
                     character.Restat(true);
                 }
             }
+            
+            client.Character.Reply($"Restated {CharacterRecord.Characters} characters.");
+        }
+
+
+        [ChatCommand("restat", ServerRoleEnum.Animator)]
+        public static void SelfRestat(string value, WorldClient client) {
+            client.Character.Restat();
+            client.Character.Reply("Restat successful.");
         }
 
 
@@ -630,31 +500,6 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
             client.Send(new DebugHighlightCellsMessage(Color.BurlyWood.ToArgb(),
                                                        client.Character.Map.WalkableCells.ToArray()));
         }
-
-
-        // [ChatCommand("elements", ServerRoleEnum.Fondator)]
-        // public static void ElementsCommand(string value, WorldClient client) {
-        //     Color[] colors = {
-        //         Color.Blue, Color.Cyan, Color.Yellow, Color.Pink,
-        //         Color.Goldenrod, Color.Green, Color.Red, Color.Purple, Color.Silver, Color.SkyBlue, Color.Black
-        //     };
-        //
-        //     InteractiveElementRecord[] elements =
-        //         InteractiveElementRecord.GetAllElements(client.Character.Map.Id).ToArray();
-        //
-        //     if (elements.Count() == 0) {
-        //         client.Character.Reply("No Elements on Map...");
-        //
-        //         return;
-        //     }
-        //
-        //     client.Send(new DebugClearHighlightCellsMessage());
-        //     for (int i = 0; i < elements.Count(); i++) {
-        //         var ele = elements[i];
-        //         client.Send(new DebugHighlightCellsMessage(colors[i].ToArgb(), new[] { ele.CellId }));
-        //         client.Character.Reply("Element > " + ele.ElementId + " CellId > " + ele.CellId + " GfxId > " + ele.GfxId + " GfxLookId > " + ele.GfxBonesId, colors[i]);
-        //     }
-        // }
 
 
         [ChatCommand("nospawn", ServerRoleEnum.Fondator)]
@@ -899,6 +744,9 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
         [ChatCommand("look", ServerRoleEnum.Moderator)]
         public static void LookCommand(string value, WorldClient client) {
             value = value.Replace("&#123;", "{").Replace("&#125;", "}");
+            Console.WriteLine($"Changing look of player {client.Character.Name} ({client.Account.Nickname}): from {client.Character.Look} to {value}.");
+            client.Character.Reply($"Look before update: {client.Character.Look}");
+            
             client.Character.Look = ContextActorLook.Parse(value);
             client.Character.RefreshActorOnMap();
         }
@@ -938,32 +786,6 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
         [ChatCommand("start")]
         public static void StartCommand(string value, WorldClient client) {
             client.Character.Teleport(154010883, 383);
-        }
-
-
-        [ChatCommand("npcmove", ServerRoleEnum.Fondator)]
-        public static void MoveNpcCommand(string value, WorldClient client) {
-            Npc npc = client.Character.Map.Instance.GetEntities<Npc>().FirstOrDefault(x => x.SpawnRecord.Id == int.Parse(value));
-            if (npc != null) {
-                npc.SpawnRecord.CellId = client.Character.CellId;
-                npc.SpawnRecord.Direction = (sbyte) client.Character.Direction;
-                npc.SpawnRecord.UpdateInstantElement();
-            }
-
-            client.Character.Map.Instance.Reload();
-        }
-
-
-        [ChatCommand("npcdelete", ServerRoleEnum.Fondator)]
-        public static void DeleteNpc(string value, WorldClient client) {
-            Npc npc = client.Character.Map.Instance.GetEntities<Npc>()
-                            .FirstOrDefault(x => x.SpawnRecord.Id == int.Parse(value));
-
-            if (npc != null) {
-                npc.SpawnRecord.RemoveInstantElement();
-                client.Character.Map.Instance.RemoveEntity(npc);
-                client.Character.Map.Instance.Reload();
-            }
         }
 
 
@@ -1136,105 +958,105 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
         }
 
 
-        [ChatCommand("addpaddock", ServerRoleEnum.Fondator)]
-        public static void AddPaddock(string value, WorldClient client) {
-            InteractiveElementsUtils.CreateInteractiveElement(new NewElementData(client.Character.Map.Id, int.Parse(value), 120, "Paddock", 114), client);
-        }
-
-        // value: <element id> <mapid> <cellid>
-        // Ex: 54315631 123456145 125
-
-        [ChatCommand("adddoor", ServerRoleEnum.Fondator)]
-        public static void AddDoor(string value, WorldClient client) {
-            var split = value.Split(' ');
-
-            int elementId = int.Parse(split[0]);
-            string value1 = split[1];
-            string value2 = split[2];
-
-            InteractiveElementsUtils.CreateInteractiveElement(new NewElementData(client.Character.Map.Id, elementId, 70, "Teleport", 84, value1, value2), client);
-        }
-
-
-        [ChatCommand("dropupdate", ServerRoleEnum.Fondator)]
-        public static void UpdateDrop(string value, WorldClient client) {
-            var split = value.Split(' ');
-
-            ushort itemId = ushort.Parse(split[0]);
-            short dropRate = short.Parse(split[1]);
-            ushort monsterId = ushort.Parse(split[2]);
-
-            ItemRecord item = ItemRecord.GetItem(itemId);
-            MonsterRecord monsterRecord = MonsterRecord.GetMonster(monsterId);
-            MonsterDrop monsterDrop = monsterRecord.Drops.Find(d => d.ItemId == itemId);
-
-            monsterDrop.PercentDropForGrade1 = dropRate;
-            monsterDrop.PercentDropForGrade2 = (short) (dropRate + 2);
-            monsterDrop.PercentDropForGrade3 = (short) (dropRate + 4);
-            monsterDrop.PercentDropForGrade4 = (short) (dropRate + 6);
-            monsterDrop.PercentDropForGrade5 = (short) (dropRate + 8);
-
-            monsterRecord.UpdateInstantElement();
-
-            client.Character.Reply($"Successfully removed drop '{item.Name}' ({item.Id}) from monster '{monsterRecord.Name}' {monsterId}");
-        }
+        // [ChatCommand("addpaddock", ServerRoleEnum.Fondator)]
+        // public static void AddPaddock(string value, WorldClient client) {
+        //     InteractiveElementsUtils.CreateInteractiveElement(new NewElementData(client.Character.Map.Id, int.Parse(value), 120, "Paddock", 114), client);
+        // }
+        //
+        // // value: <element id> <mapid> <cellid>
+        // // Ex: 54315631 123456145 125
+        //
+        // [ChatCommand("adddoor", ServerRoleEnum.Fondator)]
+        // public static void AddDoor(string value, WorldClient client) {
+        //     var split = value.Split(' ');
+        //
+        //     int elementId = int.Parse(split[0]);
+        //     string value1 = split[1];
+        //     string value2 = split[2];
+        //
+        //     InteractiveElementsUtils.CreateInteractiveElement(new NewElementData(client.Character.Map.Id, elementId, 70, "Teleport", 84, value1, value2), client);
+        // }
 
 
-        [ChatCommand("droprm", ServerRoleEnum.Fondator)]
-        public static void RemoveDrop(string value, WorldClient client) {
-            var split = value.Split(' ');
+        // [ChatCommand("dropupdate", ServerRoleEnum.Fondator)]
+        // public static void UpdateDrop(string value, WorldClient client) {
+        //     var split = value.Split(' ');
+        //
+        //     ushort itemId = ushort.Parse(split[0]);
+        //     short dropRate = short.Parse(split[1]);
+        //     ushort monsterId = ushort.Parse(split[2]);
+        //
+        //     ItemRecord item = ItemRecord.GetItem(itemId);
+        //     MonsterRecord monsterRecord = MonsterRecord.GetMonster(monsterId);
+        //     MonsterDrop monsterDrop = monsterRecord.Drops.Find(d => d.ItemId == itemId);
+        //
+        //     monsterDrop.PercentDropForGrade1 = dropRate;
+        //     monsterDrop.PercentDropForGrade2 = (short) (dropRate + 2);
+        //     monsterDrop.PercentDropForGrade3 = (short) (dropRate + 4);
+        //     monsterDrop.PercentDropForGrade4 = (short) (dropRate + 6);
+        //     monsterDrop.PercentDropForGrade5 = (short) (dropRate + 8);
+        //
+        //     monsterRecord.UpdateInstantElement();
+        //
+        //     client.Character.Reply($"Successfully removed drop '{item.Name}' ({item.Id}) from monster '{monsterRecord.Name}' {monsterId}");
+        // }
 
-            ushort itemId = ushort.Parse(split[0]);
-            ushort monsterId = ushort.Parse(split[1]);
 
-            ItemRecord item = ItemRecord.GetItem(itemId);
-            MonsterRecord monsterRecord = MonsterRecord.GetMonster(monsterId);
-            monsterRecord.Drops.RemoveAll(d => d.ItemId == itemId);
+        // [ChatCommand("droprm", ServerRoleEnum.Fondator)]
+        // public static void RemoveDrop(string value, WorldClient client) {
+        //     var split = value.Split(' ');
+        //
+        //     ushort itemId = ushort.Parse(split[0]);
+        //     ushort monsterId = ushort.Parse(split[1]);
+        //
+        //     ItemRecord item = ItemRecord.GetItem(itemId);
+        //     MonsterRecord monsterRecord = MonsterRecord.GetMonster(monsterId);
+        //     monsterRecord.Drops.RemoveAll(d => d.ItemId == itemId);
+        //
+        //     monsterRecord.UpdateInstantElement();
+        //
+        //     client.Character.Reply($"Successfully removed drop '{item.Name}' ({item.Id}) from monster '{monsterRecord.Name}' {monsterId}");
+        // }
 
-            monsterRecord.UpdateInstantElement();
-
-            client.Character.Reply($"Successfully removed drop '{item.Name}' ({item.Id}) from monster '{monsterRecord.Name}' {monsterId}");
-        }
-
-        [ChatCommand("dropadd", ServerRoleEnum.Fondator)]
-        public static void AddDrop(string value, WorldClient client) {
-            var split = value.Split(' ');
-
-            ushort itemId = ushort.Parse(split[0]);
-            short dropRate = short.Parse(split[1]);
-
-            ItemRecord item = ItemRecord.GetItem(itemId);
-
-            int nextDropId = MonsterRecord.GetNextDropId();
-
-            for (var i = 2; i < split.Length; i++) {
-                ushort monsterId = ushort.Parse(split[i]);
-
-                MonsterRecord monster = MonsterRecord.GetMonster(monsterId);
-
-                MonsterDrop drop = new MonsterDrop() {
-                    ItemId = itemId,
-                    Count = 1,
-                    DropId = nextDropId,
-                    DropLimit = 1,
-                    HasCriteria = false,
-                    PercentDropForGrade1 = dropRate,
-                    PercentDropForGrade2 = (short) (dropRate + 2),
-                    PercentDropForGrade3 = (short) (dropRate + 4),
-                    PercentDropForGrade4 = (short) (dropRate + 6),
-                    PercentDropForGrade5 = (short) (dropRate + 8),
-                    ProspectingLock = 100
-                };
-
-                monster.Drops.Add(drop);
-
-                // TODO: check if necessary.
-                monster.UpdateInstantElement();
-
-                client.Character.Reply($"Added drop '{item.Name}' ({itemId}) to monster '{monster.Name}' ({monsterId}) with a drop rate of {dropRate} (DropId={nextDropId}).");
-                nextDropId++;
-            }
-        }
+        // [ChatCommand("dropadd", ServerRoleEnum.Fondator)]
+        // public static void AddDrop(string value, WorldClient client) {
+        //     var split = value.Split(' ');
+        //
+        //     ushort itemId = ushort.Parse(split[0]);
+        //     short dropRate = short.Parse(split[1]);
+        //
+        //     ItemRecord item = ItemRecord.GetItem(itemId);
+        //
+        //     int nextDropId = MonsterRecord.GetNextDropId();
+        //
+        //     for (var i = 2; i < split.Length; i++) {
+        //         ushort monsterId = ushort.Parse(split[i]);
+        //
+        //         MonsterRecord monster = MonsterRecord.GetMonster(monsterId);
+        //
+        //         MonsterDrop drop = new MonsterDrop() {
+        //             ItemId = itemId,
+        //             Count = 1,
+        //             DropId = nextDropId,
+        //             DropLimit = 1,
+        //             HasCriteria = false,
+        //             PercentDropForGrade1 = dropRate,
+        //             PercentDropForGrade2 = (short) (dropRate + 2),
+        //             PercentDropForGrade3 = (short) (dropRate + 4),
+        //             PercentDropForGrade4 = (short) (dropRate + 6),
+        //             PercentDropForGrade5 = (short) (dropRate + 8),
+        //             ProspectingLock = 100
+        //         };
+        //
+        //         monster.Drops.Add(drop);
+        //
+        //         // TODO: check if necessary.
+        //         monster.UpdateInstantElement();
+        //
+        //         client.Character.Reply($"Added drop '{item.Name}' ({itemId}) to monster '{monster.Name}' ({monsterId}) with a drop rate of {dropRate} (DropId={nextDropId}).");
+        //         nextDropId++;
+        //     }
+        // }
 
         [ChatCommand("el", ServerRoleEnum.Fondator)]
         public static void AddElementAbbr(string value, WorldClient client) => ElementsCmdBroker.Run(value, client);
@@ -1248,12 +1070,17 @@ namespace Symbioz.World.Handlers.RolePlay.Commands {
 
         [ChatCommand("entries", ServerRoleEnum.Fondator)]
         public static void Entries(string value, WorldClient client) => EntriesCmdBroker.Run(value, client);
-
-
+        
         [ChatCommand("exits", ServerRoleEnum.Fondator)]
         public static void Exits(string value, WorldClient client) => ExitsCmdBroker.Run(value, client);
 
-        [ChatCommand("Mine", ServerRoleEnum.Fondator)]
+        [ChatCommand("mine", ServerRoleEnum.Fondator)]
         public static void Mine(string value, WorldClient client) => MineCmdBroker.Run(value, client);
+
+        [ChatCommand("drops", ServerRoleEnum.Fondator)]
+        public static void Drops(string value, WorldClient client) => DropsCmdBroker.Run(value, client);
+
+        [ChatCommand("npc", ServerRoleEnum.Fondator)]
+        public static void Npcs(string value, WorldClient client) => NpcCmdBroker.Run(value, client);
     }
 }

@@ -6,7 +6,7 @@ using Symbioz.Core;
 namespace Symbioz.World.Handlers.RolePlay.Commands.Utils.Mines {
     public class Mine {
         public List<MineMap> Maps = new List<MineMap>();
-        public Dictionary<int, int> ores = new Dictionary<int, int>();
+        public Dictionary<int, int> Ores = new Dictionary<int, int>();
 
         public Mine() { }
 
@@ -14,13 +14,14 @@ namespace Symbioz.World.Handlers.RolePlay.Commands.Utils.Mines {
             this.Maps.Add(map);
         }
 
-        public void AddOre(int oreId, int quantity) {
-            if (this.ores.ContainsKey(oreId)) {
-                quantity += this.ores[oreId];
-                this.ores.Remove(oreId);
+        public int AddOre(int oreId, int quantity) {
+            if (this.Ores.ContainsKey(oreId)) {
+                quantity += this.Ores[oreId];
+                this.Ores.Remove(oreId);
             }
 
-            this.ores.Add(oreId, quantity);
+            this.Ores.Add(oreId, quantity);
+            return quantity;
         }
     }
 }
